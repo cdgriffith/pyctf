@@ -5,10 +5,14 @@
     },
     "questions" : {
         "1": {
+            "question": "what is 1 + 1?",
+            "answer": 2,
+            "time_limit": 10
+        },
+        "2": {
             "question_script": "",
             "answer_script": "",
-            "question": "what is 1 + 1?",
-            "answer": 2
+            "time_limit": 10
         }
     }
 }

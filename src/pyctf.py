@@ -3,12 +3,15 @@
 
 import bottle
 import json
+import uuid
+import time
 from subprocess import Popen, PIPE
 
 app = bottle.Bottle()
 
 questions = dict()
 config = dict()
+limits = dict()
 
 
 def prepare_server(match_file):
@@ -26,31 +29,69 @@ def main_page():
 @app.route("/question/<question_number>")
 def get_question(question_number):
     match_data = questions[question_number]
+    uid = uuid.uuid4().hex
+    out = dict(time_limit=0, uuid=uid, question="", data=None)
 
     if "question_script" in match_data:
-        p = Popen(match_data['question_script'], shell=True, stdout=PIPE, stderr=PIPE, stdin=PIPE)
-        out, err = p.communicate(timeout=15)
-        return json.loads(out)
-    else:
-        try:
-            return questions[question_number]['question']
-        except KeyError:
-            return {"error": "question not found"}
+        process_data = run_process(match_data['question_script'])
 
+        out.update(process_data)
+    else:
+        out['question'] = match_data['question']
+        out['time_limit'] = match_data.get('time_limit', None)
+        out['data'] = match_data.get('data', None)
+
+    limits[uid] = dict(start_time=time.time(),
+                       data=out['data'],
+                       time_limit=out['time_limit'])
+
+    return out
 
 @app.route("/answer/<question_number>", method="post")
 def check_answer(question_number):
-    data = bottle.request.json
+    match_data = questions[question_number]
+    incoming_data = bottle.request.json
 
-    try:
-        correct_answer = questions[question_number]['answer']
-    except KeyError:
-        return {"error": "question not found"}
+    uid = incoming_data['uid']
 
-    if data['answer'] == correct_answer:
-        return {"correct": True}
+    if uid not in limits:
+        return {"error": "non existent uid"}
+
+    if limits['time_limit']:
+        time_spent = time.time() - limits[uid]['start_time']
+        if time_spent >= limits['time_limit']:
+            return dict(error="time limit of {0} seconds exceeded."
+                              " Time spent: {1}".format(limits['time_limit'],
+                                                        time_spent))
+
+    if "answer_script" in match_data:
+        process_data = run_process(match_data['answer_script'],
+                                   input=dict(data=limits['data'],
+                                              answer=incoming_data['data']))
+        return process_data
     else:
-        return {"correct": False}
+        try:
+            correct_answer = questions[question_number]['answer']
+        except KeyError:
+            return {"error": "question not found"}
+
+        if incoming_data['answer'] == correct_answer:
+            return {"correct": True}
+        else:
+            return {"correct": False}
+
+
+def run_process(command, timeout=15, input=None):
+        p = Popen(command, shell=True, stdout=PIPE,
+                  stderr=PIPE, stdin=PIPE)
+
+        stdout, stderr = p.communicate(input=input, timeout=timeout)
+
+        if stderr:
+            raise Exception(stderr)
+
+        return json.loads(stdout)
+
 
 
 if __name__ == '__main__':
