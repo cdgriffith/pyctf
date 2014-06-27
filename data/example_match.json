@@ -5,6 +5,8 @@
     },
     "questions" : {
         "1": {
+            "question_script": "",
+            "answer_script": "",
             "question": "what is 1 + 1?",
             "answer": 2
         }

@@ -3,6 +3,7 @@
 
 import bottle
 import json
+from subprocess import Popen, PIPE
 
 app = bottle.Bottle()
 
@@ -24,10 +25,17 @@ def main_page():
 
 @app.route("/question/<question_number>")
 def get_question(question_number):
-    try:
-        return questions[question_number]['question']
-    except KeyError:
-        return {"error": "question not found"}
+    match_data = questions[question_number]
+
+    if "question_script" in match_data:
+        p = Popen(match_data['question_script'], shell=True, stdout=PIPE, stderr=PIPE, stdin=PIPE)
+        out, err = p.communicate(timeout=15)
+        return json.loads(out)
+    else:
+        try:
+            return questions[question_number]['question']
+        except KeyError:
+            return {"error": "question not found"}
 
 
 @app.route("/answer/<question_number>", method="post")
