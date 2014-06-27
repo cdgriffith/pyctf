@@ -1,6 +1,6 @@
 pyctf
 =====
 
-pyctf.py <json_file>
+pyctf.py \<json_file\>
 
 

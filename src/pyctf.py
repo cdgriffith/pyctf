@@ -48,4 +48,4 @@ def check_answer(question_number):
 if __name__ == '__main__':
     import sys
     prepare_server(sys.argv[1])
-    bottle.run(app)
+    bottle.run(app, host=config['host'], port=config['port'])
