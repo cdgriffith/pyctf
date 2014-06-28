@@ -5,6 +5,6 @@
             },
         "user": {
             "password": "75ec4177a9cd120214e998997970882e5ccf6b86786da0766e81765699d292c1",
-            "role": ["user"]}
+            "roles": ["user"]}
 
 }

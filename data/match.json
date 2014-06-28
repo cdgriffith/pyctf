@@ -1,6 +1,6 @@
 {
     "server": {
-        "port": 8080,
+        "port": 47275,
         "host": "localhost",
         "working_directory": "../data",
         "ssl": true,

@@ -50,6 +50,7 @@ def main_page():
 @app.route("/login", method="post")
 def login():
     global auth_tokens
+    print(bottle.request.body.read())
     incoming_data = bottle.request.json
     user = incoming_data['user']
     password = incoming_data['password']
@@ -85,7 +86,7 @@ def check_auth(token, role="user"):
 
 def update_score(user, question):
     global scores
-    points = question[question].get("points", 1)
+    points = questions[question].get("points", 1)
     if user not in scores:
         scores[user] = dict(completed=[question], points=points)
     else:
@@ -100,6 +101,11 @@ def list_questions():
     return {k: {"title": v.get('title'), "tags": v.get('tags')}
             for k, v in questions.items()}
 
+@app.route("/score", method="post")
+def get_score():
+    auth_token = bottle.request.json['auth_token']
+    user = check_auth(auth_token)
+    return dict(score=scores[user]['points'])
 
 @app.route("/question/<question_number>")
 def get_question(question_number):
@@ -123,7 +129,6 @@ def get_question(question_number):
     if config['save_state']:
         with open(config['save_file'], "w", encoding="utf-8") as f:
             json.dump(fp=f, obj=limits, indent=4)
-
     return out
 
 
@@ -131,7 +136,7 @@ def get_question(question_number):
 def check_answer(question_number):
     match_data = questions[question_number]
     incoming_data = bottle.request.json
-    user = check_auth(incoming_data['auth'])
+    user = check_auth(incoming_data['auth_token'])
 
     uid = incoming_data['token']
 
@@ -184,16 +189,15 @@ def run_process(command, stdin=None, timeout=15):
         return json.loads(stdout.decode("utf-8"))
 
 
-def enable_ssl(key, cert):
+def enable_ssl(key, cert, host, port):
     from cherrypy.wsgiserver.ssl_builtin import BuiltinSSLAdapter
     from cherrypy.wsgiserver.wsgiserver3 import CherryPyWSGIServer
 
     class SSLServer(bottle.ServerAdapter):
         def run(self, handler):
-            ssl_server = CherryPyWSGIServer((self.host, self.port), handler)
+            ssl_server = CherryPyWSGIServer((host, port), handler)
             ssl_server.ssl_adapter = BuiltinSSLAdapter(private_key=key,
                                                        certificate=cert)
-
             try:
                 ssl_server.start()
             finally:
@@ -207,7 +211,8 @@ if __name__ == '__main__':
     prepare_server(json_file)
 
     server = 'wsgiref' if not config.get('ssl') else enable_ssl(
-        key=config['ssl_key'], cert=config['ssl_cert'])
+        key=config['ssl_key'], cert=config['ssl_cert'],
+        host=config['host'], port=config['port'])
 
     bottle.run(app, host=config['host'], port=config['port'], server=server)
 
