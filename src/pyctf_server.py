@@ -12,23 +12,21 @@ import hashlib
 
 logger = logging.getLogger(__file__)
 
-questions = dict()
-config = dict()
-limits = dict()
-auth = dict()
-auth_tokens = dict()
+questions, config, scores = dict(), dict(), dict()
+auth, auth_tokens, limits = dict(), dict(), dict()
 
 app = bottle.Bottle()
 
 
 def prepare_server(match_file):
-    global questions, config, limits, auth
+    global questions, config, limits, auth, scores
 
     with open(match_file, encoding="utf-8") as f:
         content = json.load(f)
 
     questions = content['questions']
     config = content['server']
+    scores = content['scores']
     root = os.path.abspath(os.path.dirname(__file__))
     os.chdir(os.path.join(root, config['working_directory']))
 
@@ -85,6 +83,24 @@ def check_auth(token, role="user"):
     return auth_tokens[token]['user']
 
 
+def update_score(user, question):
+    global scores
+    points = question[question].get("points", 1)
+    if user not in scores:
+        scores[user] = dict(completed=[question], points=points)
+    else:
+        if question not in scores[user]['completed']:
+            scores[user]['completed'].append(question)
+            scores[user]['points'] += points
+    return scores[user]['points']
+
+
+@app.route("/questions")
+def list_questions():
+    return {k: {"title": v.get('title'), "tags": v.get('tags')}
+            for k, v in questions.items()}
+
+
 @app.route("/question/<question_number>")
 def get_question(question_number):
     match_data = questions[question_number]
@@ -131,13 +147,15 @@ def check_answer(question_number):
                               " Time spent: {1}".format(
                 answer_data['time_limit'], time_spent))
 
+    correct = False
+
     if "answer_script" in match_data:
         process_data = run_process(match_data['answer_script'],
                                    stdin=json.dumps(
                                        dict(data=answer_data['data'],
                                             answer=incoming_data['answer'],
                                             storage=answer_data['storage'])))
-        return process_data
+        correct = process_data['correct']
     else:
         try:
             correct_answer = questions[question_number]['answer']
@@ -145,9 +163,12 @@ def check_answer(question_number):
             return {"error": "question not found"}
 
         if incoming_data['answer'] == correct_answer:
-            return {"correct": True}
-        else:
-            return {"correct": False}
+            correct = True
+
+    if correct:
+        score = update_score(user, question_number)
+        return {"correct": True, "score": score}
+    return {"correct": False}
 
 
 def run_process(command, stdin=None, timeout=15):
