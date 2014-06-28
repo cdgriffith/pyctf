@@ -4,8 +4,11 @@
         "host": "localhost",
         "working_directory": "../data",
         "ssl": true,
-        "ssl_cert": "example_ssl.pem",
-        "ssl_key": "example_ssl.pem"
+        "ssl_cert": "ssl.pem",
+        "ssl_key": "ssl.pem",
+        "save_state": true,
+        "save_file": "match.json",
+        "auth_file": "auth.json"
     },
     "questions" : {
         "1": {
