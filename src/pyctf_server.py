@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
-
+from __future__ import print_function
 import bottle
 import json
 import uuid
@@ -158,8 +158,6 @@ def get_question(question_number):
     return out
 
 
-
-
 @app.route("/answer/<question_number>", method="post")
 def check_answer(question_number):
     match_data = questions[question_number]
@@ -202,6 +200,7 @@ def check_answer(question_number):
         score = update_score(user, question_number)
         return {"correct": True, "score": score}
     return {"correct": False}
+
 
 @app.route("/score", method="post")
 def get_score():
@@ -280,8 +279,14 @@ def enable_ssl(key, cert, host, port):
     from cherrypy.wsgiserver.wsgiserver3 import CherryPyWSGIServer
 
     class SSLServer(bottle.ServerAdapter):
+
+        def __init__(self, **options):
+            self.host = host
+            self.port = port
+            self.options = options
+
         def run(self, handler):
-            ssl_server = CherryPyWSGIServer((host, port), handler)
+            ssl_server = CherryPyWSGIServer((self.host, self.port), handler)
             ssl_server.ssl_adapter = BuiltinSSLAdapter(private_key=key,
                                                        certificate=cert)
             try:

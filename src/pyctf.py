@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
+from __future__ import print_function
 import requests
 import json
 
@@ -33,7 +34,7 @@ class PyCTF():
         try:
             return req.json()
         except ValueError:
-            return req.text
+            raise Exception("Server did not return json: {0}".format(req.text))
 
     def _check_auth(self):
         if not self.auth_token:
@@ -46,7 +47,9 @@ class PyCTF():
             resp = self._request(url, data)
         except Exception as err:
             if "Forbidden" in str(err):
-                print("Incorrect password")
+                raise Exception("Incorrect password")
+            else:
+                raise err
         else:
             self.auth_token = resp['auth_token']
 
@@ -57,7 +60,7 @@ class PyCTF():
     def question(self, question_number):
         url = "{0}/question/{1}".format(self.host, question_number)
         resp = self._request(url)
-        self.tokens[question_number] = resp['token']
+        self.tokens[question_number] = resp.pop('token')
         return resp
 
     def answer(self, question_number, answer):
