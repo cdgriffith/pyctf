@@ -18,33 +18,11 @@ auth, auth_tokens, limits = dict(), dict(), dict()
 app = bottle.Bottle()
 
 
-def prepare_server(match_file):
-    global questions, config, limits, auth, scores
-
-    with open(match_file, encoding="utf-8") as f:
-        content = json.load(f)
-
-    questions = content['questions']
-    config = content['server']
-    scores = content['scores']
-    root = os.path.abspath(os.path.dirname(__file__))
-    os.chdir(os.path.join(root, config['working_directory']))
-
-    with open(config['auth_file'], encoding="utf-8") as f:
-        auth = json.load(fp=f)
-
-    if config['save_state']:
-        if os.path.exists(config['save_file']):
-            try:
-                with open(config['save_file'], encoding="utf-8") as f:
-                    limits = json.load(fp=f)
-            except (OSError, ValueError):
-                logger.warning("Could not load data from previous save file")
-
-
 @app.route("/")
 def main_page():
     return {}
+
+######################### User Management #####################################
 
 
 @app.route("/login", method="post")
@@ -53,11 +31,10 @@ def login():
     incoming_data = bottle.request.json
     user = incoming_data['user']
     password = incoming_data['password']
-    if user not in auth:
-        raise Exception()
-    hashed = hashlib.sha256("{0}{1}".format(password, config['seed'])
-                            .encode(config['encoding'])).hexdigest()
-    if hashed != auth[user]['password']:
+
+    if user not in auth and config['anonymous_users']:
+        auth[user] = dict(password=hash_pass(password), roles=['user'])
+    elif not verify_user(user, password):
         bottle.redirect("/login", code=403)
 
     token = uuid.uuid4().hex
@@ -66,6 +43,20 @@ def login():
     auth_tokens[token] = dict(timeout=timeout,
                               user=user, roles=auth[user]['roles'])
     return {"auth_token": token}
+
+
+def hash_pass(password):
+    return hashlib.sha256("{0}{1}".format(password, config['seed'])
+                          .encode(config['encoding'])).hexdigest()
+
+
+def verify_user(user, password):
+    if user not in auth:
+        return False
+    hashed = hash_pass(password)
+    if hashed != auth[user]['password']:
+        return False
+    return True
 
 
 def check_auth(token, role="user"):
@@ -83,29 +74,66 @@ def check_auth(token, role="user"):
     return auth_tokens[token]['user']
 
 
-def update_score(user, question):
-    global scores
-    points = questions[question].get("points", 1)
-    if user not in scores:
-        scores[user] = dict(completed=[question], points=points)
-    else:
-        if question not in scores[user]['completed']:
-            scores[user]['completed'].append(question)
-            scores[user]['points'] += points
-    return scores[user]['points']
+@app.route("/user/change_password", method="post")
+def change_password():
+    global auth, auth_tokens
+    incoming_data = bottle.request.json
+    user = check_auth(incoming_data['auth_token'])
+    password = incoming_data['password']
+    old_password = incoming_data['old_password']
+
+    if not verify_user(user, old_password):
+        return {"changed": False}
+
+    hashed = hashlib.sha256("{0}{1}".format(password, config['seed'])
+                            .encode(config['encoding'])).hexdigest()
+    auth[user]['password'] = hashed
+
+    token = uuid.uuid4().hex
+    timeout = time.time() + config['auth_time_limit']
+
+    auth_tokens[token] = dict(timeout=timeout,
+                              user=user, roles=auth[user]['roles'])
+    save_auth()
+    return {"changed": True}
+
+
+@app.route("/user/add", method="post")
+def add_user():
+    incoming_data = bottle.request.json
+    check_auth(incoming_data['auth_token'], role="admin")
+    user = incoming_data['user']
+    if user in auth:
+        return {"error": "user '{0}' already exists".format(user)}
+    password = incoming_data['password']
+    auth[user] = dict(password=hash_pass(password), roles=['user'])
+    if incoming_data.get('admin', False):
+        auth[user].append("admin")
+    save_auth()
+    return {}
+
+
+@app.route("/user/remove", method="post")
+def remove_user():
+    incoming_data = bottle.request.json
+    check_auth(incoming_data['auth_token'], role="admin")
+    user = incoming_data['user']
+    if user not in auth:
+        return {"error": "user '{0}' does not exists".format(user)}
+    del auth[user]
+    if user in scores:
+        del scores[user]
+        save_state()
+    save_auth()
+    return {}
+
+############################## Challenges #####################################
 
 
 @app.route("/questions")
 def list_questions():
     return {k: {"title": v.get('title'), "tags": v.get('tags')}
             for k, v in questions.items()}
-
-
-@app.route("/score", method="post")
-def get_score():
-    auth_token = bottle.request.json['auth_token']
-    user = check_auth(auth_token)
-    return dict(score=scores[user]['points'])
 
 
 @app.route("/question/<question_number>")
@@ -126,11 +154,10 @@ def get_question(question_number):
                        time_limit=out['time_limit'],
                        storage=None if "storage" not in
                                        data else data['storage'])
-
-    if config['save_state']:
-        with open(config['save_file'], "w", encoding="utf-8") as f:
-            json.dump(fp=f, obj=limits, indent=4)
+    save_state()
     return out
+
+
 
 
 @app.route("/answer/<question_number>", method="post")
@@ -176,6 +203,12 @@ def check_answer(question_number):
         return {"correct": True, "score": score}
     return {"correct": False}
 
+@app.route("/score", method="post")
+def get_score():
+    auth_token = bottle.request.json['auth_token']
+    user = check_auth(auth_token)
+    return dict(score=scores[user]['points'])
+
 
 def run_process(command, stdin=None, timeout=15):
         p = Popen(command, shell=True, stdout=PIPE,
@@ -188,6 +221,58 @@ def run_process(command, stdin=None, timeout=15):
             raise Exception(stderr.decode("utf-8"))
 
         return json.loads(stdout.decode("utf-8"))
+
+
+def update_score(user, question):
+    global scores
+    points = questions[question].get("points", 1)
+    if user not in scores:
+        scores[user] = dict(completed=[question], points=points)
+    else:
+        if question not in scores[user]['completed']:
+            scores[user]['completed'].append(question)
+            scores[user]['points'] += points
+    return scores[user]['points']
+
+
+################################# Server #####################################
+
+def save_state():
+    if config['save_state']:
+        with open(config['save_file'], "w", encoding="utf-8") as f:
+            json.dump(fp=f, obj=dict(tokens=limits, scores=scores), indent=4)
+
+
+def save_auth():
+    with open(config['auth_file'], mode="w", encoding="utf-8") as f:
+        json.dump(fp=f, obj=auth, indent=4)
+
+
+def prepare_server(match_file):
+    global questions, config, limits, auth, scores
+
+    with open(match_file, encoding="utf-8") as f:
+        content = json.load(f)
+
+    questions = content['questions']
+    config = content['server']
+
+    root = os.path.abspath(os.path.dirname(__file__))
+    os.chdir(os.path.join(root, config['working_directory']))
+
+    with open(config['auth_file'], encoding="utf-8") as f:
+        auth = json.load(fp=f)
+
+    if config['save_state']:
+        if os.path.exists(config['save_file']):
+            try:
+                with open(config['save_file'], encoding="utf-8") as f:
+                    save_state = json.load(fp=f)
+            except (OSError, ValueError):
+                logger.warning("Could not load data from previous save file")
+            else:
+                limits.update(save_state.get('tokens', dict()))
+                scores.update(save_state.get('scores', dict()))
 
 
 def enable_ssl(key, cert, host, port):

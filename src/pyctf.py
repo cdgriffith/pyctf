@@ -27,16 +27,28 @@ class PyCTF():
             raise Exception("Wrong method")
         if req.status_code != 200:
             if req.status_code == 403:
-                raise Exception("Not yet authenticated, please use .auth")
+                raise Exception("Forbidden area")
             else:
                 raise Exception(req.text)
-        return req.json()
+        try:
+            return req.json()
+        except ValueError:
+            return req.text
+
+    def _check_auth(self):
+        if not self.auth_token:
+            raise Exception("Authenticate with .auth(username, password))")
 
     def auth(self, user, password):
         url = "{0}/login".format(self.host)
         data = dict(user=user, password=password)
-        resp = self._request(url, data)
-        self.auth_token = resp['auth_token']
+        try:
+            resp = self._request(url, data)
+        except Exception as err:
+            if "Forbidden" in str(err):
+                print("Incorrect password")
+        else:
+            self.auth_token = resp['auth_token']
 
     def questions(self):
         url = "{0}/questions".format(self.host)
@@ -49,8 +61,7 @@ class PyCTF():
         return resp
 
     def answer(self, question_number, answer):
-        if not self.auth_token:
-            raise Exception("Authenticate with .auth(username, password))")
+        self._check_auth()
         url = "{0}/answer/{1}".format(self.host, question_number)
         data = dict(auth_token=self.auth_token,
                     token=self.tokens[question_number],
@@ -58,8 +69,27 @@ class PyCTF():
         return self._request(url, data=data)
 
     def score(self):
-        if not self.auth_token:
-            raise Exception("Authenticate with .auth(username, password))")
+        self._check_auth()
         url = "{0}/score".format(self.host)
         data = dict(auth_token=self.auth_token)
+        return self._request(url, data=data)
+
+    def change_password(self, old_password, new_password):
+        self._check_auth()
+        url = "{0}/user/change_password".format(self.host)
+        data = dict(auth_token=self.auth_token,
+                    old_password=old_password, password=new_password)
+        return self._request(url, data=data)
+
+    def admin_add_user(self, user, password):
+        self._check_auth()
+        url = "{0}/user/add".format(self.host)
+        data = dict(auth_token=self.auth_token,
+                    user=user, password=password)
+        return self._request(url, data=data)
+
+    def admin_remove_user(self, user):
+        self._check_auth()
+        url = "{0}/user/remove".format(self.host)
+        data = dict(auth_token=self.auth_token, user=user)
         return self._request(url, data=data)

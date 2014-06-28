@@ -11,7 +11,8 @@
         "auth_file": "users.json",
         "seed": "4Rf58Ik12",
         "encoding": "utf-8",
-        "auth_time_limit": 2400
+        "auth_time_limit": 2400,
+        "anonymous_users": true
     },
     "questions" : {
         "1": {
@@ -27,8 +28,5 @@
             "points": 2,
             "tags": ["script"]
         }
-    },
-    "scores" : {
-
     }
 }
