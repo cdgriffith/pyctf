@@ -1,7 +1,11 @@
 {
     "server": {
         "port": 8080,
-        "host": "localhost"
+        "host": "localhost",
+        "working_directory": "../data",
+        "ssl": false,
+        "ssl_cert": "",
+        "ssl_key": ""
     },
     "questions" : {
         "1": {
@@ -10,9 +14,9 @@
             "time_limit": 10
         },
         "2": {
-            "question_script": "",
-            "answer_script": "",
-            "time_limit": 10
+            "question_script": "python example_script.py -q",
+            "answer_script": "python example_script.py -a",
+            "time_limit": 0
         }
     }
 }
