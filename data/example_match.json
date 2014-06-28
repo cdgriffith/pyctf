@@ -3,9 +3,9 @@
         "port": 8080,
         "host": "localhost",
         "working_directory": "../data",
-        "ssl": false,
-        "ssl_cert": "",
-        "ssl_key": ""
+        "ssl": true,
+        "ssl_cert": "example_ssl.pem",
+        "ssl_key": "example_ssl.pem"
     },
     "questions" : {
         "1": {

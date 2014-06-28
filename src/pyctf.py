@@ -99,17 +99,27 @@ def run_process(command, stdin=None, timeout=15):
         return json.loads(stdout.decode("utf-8"))
 
 
+def enable_ssl(key, cert):
+    from cherrypy.wsgiserver.ssl_builtin import BuiltinSSLAdapter
+    from cherrypy.wsgiserver.wsgiserver3 import CherryPyWSGIServer
+
+    class SSLServer(bottle.ServerAdapter):
+        def run(self, handler):
+            ssl_server = CherryPyWSGIServer((self.host, self.port), handler)
+            ssl_server.ssl_adapter = BuiltinSSLAdapter(private_key=key, certificate=cert)
+            try:
+                ssl_server.start()
+            finally:
+                ssl_server.stop()
+    return SSLServer
+
+
 if __name__ == '__main__':
     import sys
     json_file = "../data" if len(sys.argv) != 2 else sys.argv[1]
     prepare_server(json_file)
 
-    if config.get('ssl'):
-        from cherrypy.wsgiserver import CherryPyWSGIServer
-        from cherrypy.wsgiserver.ssl_builtin import BuiltinSSLAdapter
-        server = CherryPyWSGIServer((config['host'], config['port']), app)
-        server.ssl_adapter = BuiltinSSLAdapter(config['ssl_cert'],
-                                               config['ssl_key'], None)
-        server.start()
-    else:
-        bottle.run(app, host=config['host'], port=config['port'])
+    server = 'wsgiref' if not config.get('ssl') else enable_ssl(key=config['ssl_key'], cert=config['ssl_cert'])
+
+    bottle.run(app, host=config['host'], port=config['port'], server=server)
+
