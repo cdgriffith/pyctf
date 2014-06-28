@@ -8,7 +8,10 @@
         "ssl_key": "ssl.pem",
         "save_state": true,
         "save_file": "match.json",
-        "auth_file": "auth.json"
+        "auth_file": "users.json",
+        "seed": "4Rf58Ik12",
+        "encoding": "utf-8",
+        "auth_time_limit": 2400
     },
     "questions" : {
         "1": {
@@ -21,5 +24,8 @@
             "answer_script": "python example_script.py -a",
             "time_limit": 0
         }
+    },
+    "scores" : {
+
     }
 }

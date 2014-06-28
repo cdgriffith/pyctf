@@ -8,26 +8,32 @@ import os
 import time
 from subprocess import Popen, PIPE
 import logging
+import hashlib
 
 logger = logging.getLogger(__file__)
 
 questions = dict()
 config = dict()
 limits = dict()
+auth = dict()
+auth_tokens = dict()
 
 app = bottle.Bottle()
 
 
 def prepare_server(match_file):
-    global questions, config, limits
+    global questions, config, limits, auth
 
-    with open(match_file) as f:
+    with open(match_file, encoding="utf-8") as f:
         content = json.load(f)
 
     questions = content['questions']
     config = content['server']
     root = os.path.abspath(os.path.dirname(__file__))
     os.chdir(os.path.join(root, config['working_directory']))
+
+    with open(config['auth_file'], encoding="utf-8") as f:
+        auth = json.load(fp=f)
 
     if config['save_state']:
         if os.path.exists(config['save_file']):
@@ -41,6 +47,42 @@ def prepare_server(match_file):
 @app.route("/")
 def main_page():
     return {}
+
+
+@app.route("/login", method="post")
+def login():
+    global auth_tokens
+    incoming_data = bottle.request.json
+    user = incoming_data['user']
+    password = incoming_data['password']
+    if user not in auth:
+        raise Exception()
+    hashed = hashlib.sha256("{0}{1}".format(password, config['seed'])
+                            .encode(config['encoding'])).hexdigest()
+    if hashed != auth[user]['password']:
+        bottle.redirect("/login", code=403)
+
+    token = uuid.uuid4().hex
+    timeout = time.time() + config['auth_time_limit']
+
+    auth_tokens[token] = dict(timeout=timeout,
+                              user=user, roles=auth[user]['roles'])
+    return {"auth_token": token}
+
+
+def check_auth(token, role="user"):
+    if token not in auth_tokens:
+        bottle.redirect("/login", code=403)
+
+    if auth_tokens[token]['timeout'] > time.time():
+        auth_tokens[token]['timeout'] = (time.time() +
+                                         config['auth_time_limit'])
+    else:
+        bottle.redirect("/login", code=403)
+    if role not in auth_tokens[token]['roles']:
+        bottle.abort(403, "Not authorized to view this area")
+
+    return auth_tokens[token]['user']
 
 
 @app.route("/question/<question_number>")
@@ -73,27 +115,28 @@ def get_question(question_number):
 def check_answer(question_number):
     match_data = questions[question_number]
     incoming_data = bottle.request.json
+    user = check_auth(incoming_data['auth'])
 
     uid = incoming_data['token']
 
     if uid not in limits:
         return {"error": "non existent token"}
 
-    answer_dats = limits.pop(uid)
+    answer_data = limits.pop(uid)
 
-    if answer_dats['time_limit']:
-        time_spent = time.time() - answer_dats['start_time']
-        if time_spent >= answer_dats['time_limit']:
+    if answer_data['time_limit']:
+        time_spent = time.time() - answer_data['start_time']
+        if time_spent >= answer_data['time_limit']:
             return dict(error="time limit of {0} seconds exceeded."
                               " Time spent: {1}".format(
-                answer_dats['time_limit'], time_spent))
+                answer_data['time_limit'], time_spent))
 
     if "answer_script" in match_data:
         process_data = run_process(match_data['answer_script'],
                                    stdin=json.dumps(
-                                       dict(data=answer_dats['data'],
+                                       dict(data=answer_data['data'],
                                             answer=incoming_data['answer'],
-                                            storage=answer_dats['storage'])))
+                                            storage=answer_data['storage'])))
         return process_data
     else:
         try:
