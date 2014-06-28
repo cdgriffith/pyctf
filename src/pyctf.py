@@ -3,12 +3,15 @@
 import requests
 import json
 
+
 class PyCTF():
 
-    def __init__(self, host="https://localhost:47275", verify_ssl=False):
+    def __init__(self, host="localhost", port=47275,
+                 ssl=True, verify_ssl=False):
+        self.host = "{0}://{1}:{2}".format("https" if ssl else "http",
+                                           host, port)
         self.auth_token = None
         self.verify = verify_ssl
-        self.host = host.rstrip("/")
         self.tokens = dict()
 
     def _request(self, url, data=None, method="get"):

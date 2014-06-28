@@ -50,7 +50,6 @@ def main_page():
 @app.route("/login", method="post")
 def login():
     global auth_tokens
-    print(bottle.request.body.read())
     incoming_data = bottle.request.json
     user = incoming_data['user']
     password = incoming_data['password']
@@ -101,11 +100,13 @@ def list_questions():
     return {k: {"title": v.get('title'), "tags": v.get('tags')}
             for k, v in questions.items()}
 
+
 @app.route("/score", method="post")
 def get_score():
     auth_token = bottle.request.json['auth_token']
     user = check_auth(auth_token)
     return dict(score=scores[user]['points'])
+
 
 @app.route("/question/<question_number>")
 def get_question(question_number):
