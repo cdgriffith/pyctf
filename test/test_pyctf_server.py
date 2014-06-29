@@ -39,6 +39,16 @@ class TestPyCTFServer(unittest.TestCase):
         resp = ps.run_process("echo {\"key\": \"value\"}")
         assert resp['key'] == 'value'
 
+    def test_add_user(self):
+        ps.add_user("test_user", "test_password")
+        assert "test_user" in ps.auth
+        del ps.auth['test_user']
+
+    def test_remove_user(self):
+        ps.auth['another_test_user'] = dict()
+        ps.remove_user('another_test_user')
+        assert "another_test_user" not in ps.auth
+
 
 class TestPyCTFServerFunctional(unittest.TestCase):
 

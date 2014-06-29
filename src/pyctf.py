@@ -6,6 +6,9 @@ import json
 
 
 class PyCTF():
+    """
+    Python client to connect to a PyCTF Server.
+    """
 
     def __init__(self, host="localhost", port=47275,
                  ssl=True, verify_ssl=False):

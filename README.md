@@ -1,7 +1,7 @@
 pyctf
 =====
 
-pyctf.py \<json_file\>
+pyctf_server.py \<json_file\>
 
 
 SSL requires cherrypy
