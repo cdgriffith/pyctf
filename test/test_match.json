@@ -1,0 +1,32 @@
+{
+    "server": {
+        "port": 47276,
+        "host": "localhost",
+        "working_directory": "../test",
+        "ssl": false,
+        "ssl_cert": "",
+        "ssl_key": "",
+        "save_state": false,
+        "save_file": "",
+        "auth_file": "users.json",
+        "seed": "2Re68Ik12",
+        "encoding": "utf-8",
+        "auth_time_limit": 2400,
+        "anonymous_users": true
+    },
+    "questions" : {
+        "1": {
+            "title": "Basic intro",
+            "question": "what is 1 + 1?",
+            "answer": 2,
+            "time_limit": 10
+        },
+        "2": {
+            "question_script": "python example_script.py -q",
+            "answer_script": "python example_script.py -a",
+            "time_limit": 0,
+            "points": 2,
+            "tags": ["script"]
+        }
+    }
+}

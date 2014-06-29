@@ -27,6 +27,10 @@ def main_page():
 
 @app.route("/login", method="post")
 def login():
+    """
+    :return: JSON object with "auth_token" key:value pair
+    """
+    """ User login, requires incoming json with keys "user" and "password" """
     global auth_tokens
     incoming_data = bottle.request.json
     user = incoming_data['user']
@@ -46,11 +50,20 @@ def login():
 
 
 def hash_pass(password):
+    """
+    :param password: string of password to hash
+    :return: sha256 hash digest
+    """
     return hashlib.sha256("{0}{1}".format(password, config['seed'])
                           .encode(config['encoding'])).hexdigest()
 
 
 def verify_user(user, password):
+    """
+    :param user: Username
+    :param password: Password
+    :return: Boolean: True if user exists and correct password, False otherwise
+    """
     if user not in auth:
         return False
     hashed = hash_pass(password)
@@ -207,6 +220,14 @@ def get_score():
     auth_token = bottle.request.json['auth_token']
     user = check_auth(auth_token)
     return dict(score=scores[user]['points'])
+
+
+@app.route("/recover_token", method="post")
+def recover_token():
+    token = bottle.request.json['token']
+    del limits[token]
+    save_state()
+    return {}
 
 
 def run_process(command, stdin=None, timeout=15):

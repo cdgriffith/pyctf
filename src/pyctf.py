@@ -40,6 +40,10 @@ class PyCTF():
         if not self.auth_token:
             raise Exception("Authenticate with .auth(username, password))")
 
+    def _recover_token(self, question):
+        url = "{0}/recover_token".format(self.host)
+        self._request(url, data=dict(token=self.tokens[question]))
+
     def auth(self, user, password):
         url = "{0}/login".format(self.host)
         data = dict(user=user, password=password)
@@ -60,6 +64,8 @@ class PyCTF():
     def question(self, question_number):
         url = "{0}/question/{1}".format(self.host, question_number)
         resp = self._request(url)
+        if question_number in self.tokens:
+            self._recover_token(question_number)
         self.tokens[question_number] = resp.pop('token')
         return resp
 
