@@ -12,18 +12,37 @@ import hashlib
 
 logger = logging.getLogger(__file__)
 
+root = os.path.abspath(os.path.dirname(__file__))
+
 questions, config, scores = dict(), dict(), dict()
 auth, auth_tokens, limits = dict(), dict(), dict()
 
 app = bottle.Bottle()
 
+bottle.TEMPLATE_PATH.append(os.path.join(root, "website", "templates"))
+
+
+############################## Website ########################################
 
 @app.route("/")
+@bottle.view("main")
 def main_page():
     return {}
 
-######################### User Management #####################################
 
+@app.route("/static/<filename:path>")
+def static_file(filename):
+    return bottle.static_file(filename=filename,
+                              root=os.path.join(root, "website", "static"))
+
+
+@app.route("/media/<filename:path>")
+def media_file(filename):
+    return bottle.static_file(filename=filename,
+                              root=os.path.abspath(config['media_directory']))
+
+
+######################### User Management #####################################
 
 @app.route("/login", method="post")
 def rest_login():
@@ -172,6 +191,7 @@ def get_question(question_number):
 
     out['question'] = data['question']
     out['data'] = data.get('data', None)
+    out['media'] = data.get('media', None)
 
     limits[uid] = dict(start_time=time.time(),
                        data=out['data'],
@@ -238,6 +258,11 @@ def get_score():
     auth_token = bottle.request.json['auth_token']
     user = check_auth(auth_token)
     return dict(score=scores[user]['points'])
+
+
+@app.route("/scoreboard", method="post")
+def get_score():
+    return {x: x['points'] for x in scores}
 
 
 @app.route("/recover_token", method="post")

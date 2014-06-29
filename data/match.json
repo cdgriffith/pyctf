@@ -3,6 +3,7 @@
         "port": 47275,
         "host": "localhost",
         "working_directory": "../data",
+        "media_directory": "../data/media",
         "ssl": true,
         "ssl_cert": "ssl.pem",
         "ssl_key": "ssl.pem",
@@ -28,6 +29,12 @@
             "time_limit": 0,
             "points": 2,
             "tags": ["script"]
+        },
+        "3": {
+            "question": "open the media file and read back the contents",
+            "answer": "The quick brown fox jumps over the lazy dog",
+            "time_limit": 0,
+            "media": "question_three"
         }
     }
 }
