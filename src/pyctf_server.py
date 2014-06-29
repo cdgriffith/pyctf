@@ -26,50 +26,37 @@ def main_page():
 
 
 @app.route("/login", method="post")
-def login():
-    """
-    :return: JSON object with "auth_token" key:value pair
-    """
-    """ User login, requires incoming json with keys "user" and "password" """
+def rest_login():
     global auth_tokens
     incoming_data = bottle.request.json
     user = incoming_data['user']
     password = incoming_data['password']
+    try:
+        return {"auth_token": login(user, password)}
+    except Exception:
+        bottle.redirect("/login", code=403)
 
+
+def login(user, password):
     if user not in auth and config['anonymous_users']:
         auth[user] = dict(password=hash_pass(password), roles=['user'])
-    elif not verify_user(user, password):
-        bottle.redirect("/login", code=403)
+    elif user not in auth:
+        raise Exception()
+    hashed = hash_pass(password)
+    if hashed != auth[user]['password']:
+        raise Exception()
 
     token = uuid.uuid4().hex
     timeout = time.time() + config['auth_time_limit']
 
     auth_tokens[token] = dict(timeout=timeout,
                               user=user, roles=auth[user]['roles'])
-    return {"auth_token": token}
+    return token
 
 
 def hash_pass(password):
-    """
-    :param password: string of password to hash
-    :return: sha256 hash digest
-    """
     return hashlib.sha256("{0}{1}".format(password, config['seed'])
                           .encode(config['encoding'])).hexdigest()
-
-
-def verify_user(user, password):
-    """
-    :param user: Username
-    :param password: Password
-    :return: Boolean: True if user exists and correct password, False otherwise
-    """
-    if user not in auth:
-        return False
-    hashed = hash_pass(password)
-    if hashed != auth[user]['password']:
-        return False
-    return True
 
 
 def check_auth(token, role="user"):
@@ -88,15 +75,21 @@ def check_auth(token, role="user"):
 
 
 @app.route("/user/change_password", method="post")
-def change_password():
+def rest_change_password():
     global auth, auth_tokens
     incoming_data = bottle.request.json
     user = check_auth(incoming_data['auth_token'])
     password = incoming_data['password']
     old_password = incoming_data['old_password']
+    return {"changed": change_password(user, password, old_password)}
 
-    if not verify_user(user, old_password):
-        return {"changed": False}
+
+def change_password(user, password, old_password):
+    if not user in auth:
+        return False
+    hashed = hash_pass(old_password)
+    if hashed != auth[user]['password']:
+        return False
 
     hashed = hashlib.sha256("{0}{1}".format(password, config['seed'])
                             .encode(config['encoding'])).hexdigest()
@@ -108,29 +101,43 @@ def change_password():
     auth_tokens[token] = dict(timeout=timeout,
                               user=user, roles=auth[user]['roles'])
     save_auth()
-    return {"changed": True}
+    return True
 
 
 @app.route("/user/add", method="post")
-def add_user():
+def rest_add_user():
     incoming_data = bottle.request.json
     check_auth(incoming_data['auth_token'], role="admin")
     user = incoming_data['user']
-    if user in auth:
-        return {"error": "user '{0}' already exists".format(user)}
     password = incoming_data['password']
-    auth[user] = dict(password=hash_pass(password), roles=['user'])
-    if incoming_data.get('admin', False):
-        auth[user].append("admin")
-    save_auth()
+    admin = incoming_data.get('admin', False)
+    try:
+        add_user(user, password, admin)
+    except Exception as err:
+        return {"error": str(err)}
     return {}
 
 
+def add_user(user, password, admin=False):
+    if user in auth:
+        raise Exception("user '{0}' already exists".format(user))
+
+    auth[user] = dict(password=hash_pass(password), roles=['user'])
+    if admin:
+        auth[user].append("admin")
+    save_auth()
+
+
 @app.route("/user/remove", method="post")
-def remove_user():
+def rest_remove_user():
     incoming_data = bottle.request.json
     check_auth(incoming_data['auth_token'], role="admin")
     user = incoming_data['user']
+    remove_user(user)
+    return {}
+
+
+def remove_user(user):
     if user not in auth:
         return {"error": "user '{0}' does not exists".format(user)}
     del auth[user]
@@ -138,7 +145,7 @@ def remove_user():
         del scores[user]
         save_state()
     save_auth()
-    return {}
+
 
 ############################## Challenges #####################################
 
@@ -150,6 +157,10 @@ def list_questions():
 
 
 @app.route("/question/<question_number>")
+def rest_question(question_number):
+    return get_question(question_number)
+
+
 def get_question(question_number):
     match_data = questions[question_number]
     uid = uuid.uuid4().hex
@@ -172,24 +183,31 @@ def get_question(question_number):
 
 
 @app.route("/answer/<question_number>", method="post")
-def check_answer(question_number):
-    match_data = questions[question_number]
+def rest_check_answer(question_number):
     incoming_data = bottle.request.json
     user = check_auth(incoming_data['auth_token'])
-
     uid = incoming_data['token']
+    answer = incoming_data['answer']
+    correct, score = check_answer(answer, user, uid, question_number)
+    out = {"correct": correct}
+    if correct:
+        out['score'] = score
+    return out
 
-    if uid not in limits:
+
+def check_answer(answer, user, token, question_number):
+    match_data = questions[question_number]
+    if token not in limits:
         return {"error": "non existent token"}
 
-    answer_data = limits.pop(uid)
+    answer_data = limits.pop(token)
 
     if answer_data['time_limit']:
         time_spent = time.time() - answer_data['start_time']
         if time_spent >= answer_data['time_limit']:
             return dict(error="time limit of {0} seconds exceeded."
                               " Time spent: {1}".format(
-                answer_data['time_limit'], time_spent))
+                        answer_data['time_limit'], time_spent))
 
     correct = False
 
@@ -197,7 +215,7 @@ def check_answer(question_number):
         process_data = run_process(match_data['answer_script'],
                                    stdin=json.dumps(
                                        dict(data=answer_data['data'],
-                                            answer=incoming_data['answer'],
+                                            answer=answer,
                                             storage=answer_data['storage'])))
         correct = process_data['correct']
     else:
@@ -206,13 +224,13 @@ def check_answer(question_number):
         except KeyError:
             return {"error": "question not found"}
 
-        if incoming_data['answer'] == correct_answer:
+        if answer == correct_answer:
             correct = True
 
     if correct:
         score = update_score(user, question_number)
-        return {"correct": True, "score": score}
-    return {"correct": False}
+        return correct, score
+    return correct, 0
 
 
 @app.route("/score", method="post")
@@ -264,8 +282,9 @@ def save_state():
 
 
 def save_auth():
-    with open(config['auth_file'], mode="w", encoding="utf-8") as f:
-        json.dump(fp=f, obj=auth, indent=4)
+    if config['save_auth']:
+        with open(config['auth_file'], mode="w", encoding="utf-8") as f:
+            json.dump(fp=f, obj=auth, indent=4)
 
 
 def prepare_server(match_file):
@@ -280,8 +299,9 @@ def prepare_server(match_file):
     root = os.path.abspath(os.path.dirname(__file__))
     os.chdir(os.path.join(root, config['working_directory']))
 
-    with open(config['auth_file'], encoding="utf-8") as f:
-        auth = json.load(fp=f)
+    if os.path.exists(config['auth_file']):
+        with open(config['auth_file'], encoding="utf-8") as f:
+            auth = json.load(fp=f)
 
     if config['save_state']:
         if os.path.exists(config['save_file']):

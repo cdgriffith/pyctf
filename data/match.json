@@ -12,7 +12,8 @@
         "seed": "4Rf58Ik12",
         "encoding": "utf-8",
         "auth_time_limit": 2400,
-        "anonymous_users": true
+        "anonymous_users": true,
+        "save_auth": true
     },
     "questions" : {
         "1": {
