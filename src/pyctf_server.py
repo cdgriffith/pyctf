@@ -218,16 +218,18 @@ def rest_check_answer(question_number):
 def check_answer(answer, user, token, question_number):
     match_data = questions[question_number]
     if token not in limits:
-        return {"error": "non existent token"}
+        return False, 0
+        #return {"error": "non existent token"}
 
     answer_data = limits.pop(token)
 
     if answer_data['time_limit']:
         time_spent = time.time() - answer_data['start_time']
         if time_spent >= answer_data['time_limit']:
-            return dict(error="time limit of {0} seconds exceeded."
-                              " Time spent: {1}".format(
-                        answer_data['time_limit'], time_spent))
+            #return dict(error="time limit of {0} seconds exceeded."
+            #                  " Time spent: {1}".format(
+            #            answer_data['time_limit'], time_spent))
+            return False, 0
 
     correct = False
 
