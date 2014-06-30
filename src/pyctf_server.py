@@ -22,6 +22,9 @@ app = bottle.Bottle()
 bottle.TEMPLATE_PATH.append(os.path.join(root, "website", "templates"))
 
 
+class PyCTFError(Exception):
+    pass
+
 ############################## Website ########################################
 
 @app.route("/")
@@ -60,10 +63,10 @@ def login(user, password):
     if user not in auth and config['anonymous_users']:
         auth[user] = dict(password=hash_pass(password), roles=['user'])
     elif user not in auth:
-        raise Exception()
+        raise PyCTFError("User does not exist")
     hashed = hash_pass(password)
     if hashed != auth[user]['password']:
-        raise Exception()
+        raise PyCTFError("Password is incorrect")
 
     token = uuid.uuid4().hex
     timeout = time.time() + config['auth_time_limit']
@@ -139,7 +142,7 @@ def rest_add_user():
 
 def add_user(user, password, admin=False):
     if user in auth:
-        raise Exception("user '{0}' already exists".format(user))
+        raise PyCTFError("user '{0}' already exists".format(user))
 
     auth[user] = dict(password=hash_pass(password), roles=['user'])
     if admin:
@@ -208,7 +211,10 @@ def rest_check_answer(question_number):
     user = check_auth(incoming_data['auth_token'])
     uid = incoming_data['token']
     answer = incoming_data['answer']
-    correct, score = check_answer(answer, user, uid, question_number)
+    try:
+        correct, score = check_answer(answer, user, uid, question_number)
+    except PyCTFError as err:
+        return {"correct": False, "error": str(err)}
     out = {"correct": correct}
     if correct:
         out['score'] = score
@@ -218,18 +224,16 @@ def rest_check_answer(question_number):
 def check_answer(answer, user, token, question_number):
     match_data = questions[question_number]
     if token not in limits:
-        return False, 0
-        #return {"error": "non existent token"}
+        raise PyCTFError("non existent token")
 
     answer_data = limits.pop(token)
 
     if answer_data['time_limit']:
         time_spent = time.time() - answer_data['start_time']
         if time_spent >= answer_data['time_limit']:
-            #return dict(error="time limit of {0} seconds exceeded."
-            #                  " Time spent: {1}".format(
-            #            answer_data['time_limit'], time_spent))
-            return False, 0
+            raise PyCTFError("time limit of {0} seconds exceeded."
+                             " Time spent: {1}".format(
+                             answer_data['time_limit'], time_spent))
 
     correct = False
 
@@ -244,7 +248,7 @@ def check_answer(answer, user, token, question_number):
         try:
             correct_answer = questions[question_number]['answer']
         except KeyError:
-            return {"error": "question not found"}
+            raise PyCTFError("Question not found")
 
         if answer == correct_answer:
             correct = True
@@ -283,7 +287,7 @@ def run_process(command, stdin=None, timeout=15):
         stdout, stderr = p.communicate(input=stdin, timeout=timeout)
 
         if stderr:
-            raise Exception(stderr.decode("utf-8"))
+            raise PyCTFError(stderr.decode("utf-8"))
 
         return json.loads(stdout.decode("utf-8"))
 

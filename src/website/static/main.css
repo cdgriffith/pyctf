@@ -2,5 +2,94 @@ html, body {
     width: 100%;
     height: 100%;
     overflow: hidden;
-    background: #000000;
+    background: #181718;
+    margin: 0;
+    padding: 0;
+    font-family: Verdana, Arial, sans;
+    color: #aaa;
+}
+
+#body {
+    width:1200px;
+    margin: 0 auto;
+    background: #181718;
+    height: 100%;
+}
+
+#header {
+    color: #fff;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    height: 100px;
+    background: #181718;
+    border-bottom: solid 1px #333;
+}
+
+#sitename {
+    font-weight: bold;
+    float:left;
+    font-size: 24px;
+    padding-top: 30px;
+    width: 15%;
+}
+
+#topmenu {
+    float:right;
+    margin-right: 0;
+    margin-left: auto;
+    height: 100%;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.menuitem {
+    float: left;
+    border-right: solid 1px #444;
+    padding:3px 20px;
+    margin-top: 35px;
+    color: #888;
+}
+
+
+.menuitem:hover {
+    color: #fff;
+}
+
+
+#topmenu a{
+    color: #888;
+    text-decoration: none;
+}
+
+#topmenu a:visited{
+    color: #888;
+    text-decoration: none;
+}
+
+#topmenu a:hover{
+    color: #fff;
+    /*background: #fff;*/
+    text-decoration: none;
+}
+
+#leftcol {
+    float: left;
+    width: 70%;
+}
+
+#rightcol {
+    float:right;
+    width: 25%;
+    height: 100%;
+    /* border-left: solid 1px #333; */
+}
+
+#content {
+    height: 100%;
+}
+
+#login {
+margin-top:30px;
+float:right;
 }
