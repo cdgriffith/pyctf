@@ -53,9 +53,13 @@ html, body {
 
 
 .menuitem:hover {
-    color: #fff;
+    color: #ccc;
+    cursor: pointer;
 }
 
+.menu-select {
+	color: #fff;
+}
 
 #topmenu a{
     color: #888;
@@ -75,13 +79,17 @@ html, body {
 
 #leftcol {
     float: left;
-    width: 70%;
+    width: 900px;
+    /*min-width: 600px; */
+    margin: 0 auto;
 }
 
 #rightcol {
     float:right;
-    width: 25%;
+    width: 200px;
     height: 100%;
+    margin: 0;
+
     /* border-left: solid 1px #333; */
 }
 
@@ -92,4 +100,36 @@ html, body {
 #login {
 margin-top:30px;
 float:right;
+}
+
+.dataTable th {
+	color: #fff;
+}
+
+.dataTable tr {
+	color: #000;
+}
+
+#question_list_body {
+	display: none;
+	width: 100%;
+}
+
+#scoreboard_body {
+	display: none;
+	width: 100%;
+}
+
+#home_body {
+	width: 100%;
+}
+
+#question_body {
+	display: none;
+	width: 100%;
+}
+
+#bc_questions:hover {
+	cursor: pointer;
+	color: #fff;
 }

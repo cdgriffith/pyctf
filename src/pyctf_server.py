@@ -54,7 +54,8 @@ def rest_login():
     user = incoming_data['user']
     password = incoming_data['password']
     try:
-        return {"auth_token": login(user, password)}
+        return {"auth_token": login(user, password),
+                "timeout": config['auth_time_limit']}
     except Exception:
         bottle.redirect("/login", code=403)
 
@@ -177,6 +178,10 @@ def list_questions():
     return {k: {"title": v.get('title'), "tags": v.get('tags')}
             for k, v in questions.items()}
 
+@app.route("/questions/list")
+def list_questions():
+    return {"data":
+            [[k, v.get('title'), v.get('tags')] for k, v in questions.items()]}
 
 @app.route("/question/<question_number>")
 def rest_question(question_number):
@@ -186,12 +191,13 @@ def rest_question(question_number):
 def get_question(question_number):
     match_data = questions[question_number]
     uid = uuid.uuid4().hex
-    out = dict(time_limit=match_data['time_limit'],
-               token=uid, question="", data=None)
+    out = dict(time_limit=match_data['time_limit'], title="",
+               token=uid, question="", data=None, media=None)
 
     data = match_data if "question_script" not in match_data \
         else run_process(match_data['question_script'])
 
+    out['title'] = data.get('title', "")
     out['question'] = data['question']
     out['data'] = data.get('data', None)
     out['media'] = data.get('media', None)
@@ -266,9 +272,14 @@ def get_score():
     return dict(score=scores[user]['points'])
 
 
-@app.route("/scoreboard", method="post")
+@app.route("/scoreboard")
 def get_score():
-    return {x: x['points'] for x in scores}
+    return {x: scores[x]['points'] for x in scores}
+
+@app.route("/scoreboard/list")
+def get_score():
+    return {"data": sorted([[x, scores[x]['points']] for x in scores],
+            key=lambda x: x[1])}
 
 
 @app.route("/recover_token", method="post")
