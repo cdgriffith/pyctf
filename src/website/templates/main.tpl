@@ -39,6 +39,7 @@
                     <div id="question_title"></div>
                     <div id="question_text"></div>
                     <div id="data_text"></div>
+                    <div id="download_media"></div>
                     <div id="answer_box"><textarea name="answer"></textarea><br />
                     <input id="submit_answer" type="button" value="Answer" name="submit_answer" />
                     </div>

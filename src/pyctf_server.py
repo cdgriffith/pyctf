@@ -200,7 +200,10 @@ def get_question(question_number):
     out['title'] = data.get('title', "")
     out['question'] = data['question']
     out['data'] = data.get('data', None)
-    out['media'] = data.get('media', None)
+    if "media" in data:
+        out['media'] = "/media/{0}".format(data['media'])
+    else:
+        out['media'] = None
 
     limits[uid] = dict(start_time=time.time(),
                        data=out['data'],

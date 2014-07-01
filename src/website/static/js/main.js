@@ -88,17 +88,25 @@ function go_single_question(question_number){
 	$.ajax({
 		url: "/question/" + question_number,
 		dataType: "json",
-		success: function(data){set_question(question_number, data.title, data.question, data.data, data.timeout)},
+		success: function(data){set_question(question_number, data.title, data.question, data.data, data.timeout, data.media)},
 		failure: function(){}
 	});
 
 };
 
-function set_question(question_number, title, question, data, timeout){
+function set_question(question_number, title, question, data, timeout, media){
 	$("#bc_question_number").text(question_number);
 
 	if(! title || typeof tile === "undefined"){
 		title = "";
+	}
+
+	if(! media || typeof media === "undefined"){
+		$("#download_media").html("").hide();
+	}
+	else {
+		$("#download_media").show();
+		$("#download_media").html("<a href='"+ media +"' target='_blank'><button>Download Media</button></a>");
 	}
 
 	$("#question_title").html("<h3>" + question_number+ " : " + title + "</h3>");
