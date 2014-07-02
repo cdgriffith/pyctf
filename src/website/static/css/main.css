@@ -84,6 +84,12 @@ html, body {
     margin: 0 auto;
 }
 
+#leftcol h1 {
+	margin-top: 5px;
+	padding-top: 0;
+}
+
+
 #rightcol {
     float:right;
     width: 200px;
@@ -132,4 +138,52 @@ float:right;
 #bc_questions:hover {
 	cursor: pointer;
 	color: #fff;
+}
+
+#message_area {
+	height: 25px;
+	width:100%;
+	margin-bottom:5px;
+}
+
+#message{
+	height: 100%;
+	font-size: 20px;
+	width:100%;
+	display:none;
+	background: green;
+	color: #fff;
+	text-align: center;
+	padding-top: 5px;
+	font-weight: bold;
+}
+
+#error{
+	height: 100%;
+	font-size: 20px;
+	width:100%;
+	display:none;
+	background: red;
+	color: #000;
+	text-align: center;
+	padding-top:5px;
+	font-weight: bold;
+}
+
+#question_table_length {
+	display:none;
+}
+
+#scoreboard_table_length {
+	display:none;
+}
+
+#question_table thead{
+	/* background-color: #132626; */
+	color:white;
+}
+
+#answer_box {
+width: 700px;
+height: 100px;
 }

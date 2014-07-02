@@ -11,10 +11,10 @@ function on_page_load(){
 		$("#login_button").click(login);
 	}
 	else {
+		auth_refresh();
 		$("#login").hide();
 		show_user($.cookie('pyctf_auth_user'));
 	}
-
 };
 
 
@@ -51,6 +51,7 @@ function go_questions(){
     ],
     	"table": ["cell-border"],
         "ajax": "/questions/list",
+        "pageLength": 25
 
     } );
 
@@ -73,7 +74,9 @@ function go_scoreboard(){
         "ajax": "/scoreboard/list",
         "columns": [
             { "title": "User" },
-            { "title": "Score" }]
+            { "title": "Score" }],
+        "order": [[ 1, "desc" ]],
+        "pageLength": 10
     } );
 };
 
@@ -88,47 +91,118 @@ function go_single_question(question_number){
 	$.ajax({
 		url: "/question/" + question_number,
 		dataType: "json",
-		success: function(data){set_question(question_number, data.title, data.question, data.data, data.timeout, data.media)},
-		failure: function(){}
+		success: function(data){set_question(question_number, data)},
+		error: go_home
 	});
 
 };
 
-function set_question(question_number, title, question, data, timeout, media){
-	$("#bc_question_number").text(question_number);
+function set_question(question_number, ajax_data){
+	var title = ajax_data.title;
+	var question = ajax_data.question;
+	var data = ajax_data.data;
+	var timeout = ajax_data.timeout;
+	var media = ajax_data.media;
+	var token = ajax_data.token;
+	var answer_type  = ajax_data.answer_type;
 
-	if(! title || typeof tile === "undefined"){
-		title = "";
-	}
+	$("#bc_question_number").text(question_number);
+	$("#answer_type").val(answer_type);
 
 	if(! media || typeof media === "undefined"){
-		$("#download_media").html("").hide();
+		$("#download_row").hide();
 	}
 	else {
-		$("#download_media").show();
-		$("#download_media").html("<a href='"+ media +"' target='_blank'><button>Download Media</button></a>");
+		$("#download_row").show();
+		$("#download_media").html("<a href='"+ media +"' target='_blank'><button>Download</button></a>");
 	}
 
 	$("#question_title").html("<h3>" + question_number+ " : " + title + "</h3>");
 	$("#question_text").text(question);
-
-	$("#bc_questions").click(go_questions);
+	$("#token").val(token);
+	$("#question_number").val(question_number);
+	$("#bc_questions").off("click").click(go_questions);
 
 	if(data){
-		$("#data_text").text(JSON.stringify(data));
+		$("#data_text").text(JSON.stringify(data)).show();
+		$("#data_row").show();
+	}else{
+		$("#data_row").hide();
 	};
 
 	if(typeof $.cookie("pyctf_auth_token") === "undefined"){
 		$("#submit_answer").prop('disabled', true).val("Please login");
-	};
+	}
+	else {
+		$("#answer_box").prop('disabled', false);
+		$("#submit_answer").prop('disabled', false);
+		$("#submit_answer").val("Submit");
+		$("#submit_answer").off("click").click(answer_question);
+	}
 
 };
 
+function answer_question(){
+
+	$("#answer_box").prop('disabled', true);
+	$("#submit_answer").prop('disabled', true);
+
+	var token = $("#token").val();
+	var question_number = $("#question_number").val();
+	var answer_box = $("#answer_box").val();
+	var answer_type = $("#answer_type").val();
+	var answer = null;
+
+	if (! answer_type || answer_type == "string"){
+		answer = answer_box;
+	}else if (answer_type == "int"){
+		answer = parseInt(answer_box);
+	}
+	else{
+		answer = JSON.parse(answer_box);
+	}
+
+	$.ajax({
+		url: "/answer/"+ question_number,
+		type: "POST",
+		dataType: "json",
+		data: JSON.stringify({"token": token, "answer": answer, "auth_token": $.cookie("pyctf_auth_token")}),
+        contentType: "application/json; charset=utf-8",
+		success: function(data){
+			if (data.correct){
+				message("Correct!");
+				go_scoreboard();
+				}
+			else{
+				error("Incorrect");
+				go_single_question(question_number);
+			};
+		},
+		error: function(jqXHR, textStatus, errorThrown){
+			alert(textStatus);
+			alert(errorThrown);
+			go_single_question(question_number);
+
+		}
+	});
+
+}
 
 function show_user(username){
 			$("#login").hide();
 			$("#userinfo").show();
-			$("#userinfo").text("Welcome " + username);
+			$("#user_message").text("Welcome " + username);
+			$("#logout_button").off("click").click(logout);
+			$("#submit_answer").off("click").click(answer_question);
+			$("#submit_answer").prop('disabled', false);
+			$("#submit_answer").val("Submit");
+}
+
+function show_login(){
+			$("#login").show();
+			$("#userinfo").hide();
+			$("#user_message").text("");
+			$("#login_button").off("click").click(login);
 }
 
 function login(){
@@ -153,8 +227,42 @@ function login(){
 			$.cookie('pyctf_auth_user', username);
 			show_user(username);
 		},
-		failure: function(){}
+		error: function(jqXHR, textStatus, errorThrown){
+			error("Could not login - please try again");
+		}
 	});
 
-
 };
+
+function logout(){
+	$.removeCookie('pyctf_auth_token');
+	$.removeCookie('pyctf_auth_user');
+	show_login();
+}
+
+
+function auth_refresh(){
+	$.ajax({
+		url: "/user/auth_refresh",
+		type: "POST",
+		dataType: "json",
+		data: JSON.stringify({"auth_token": $.cookie("pyctf_auth_token")}),
+        contentType: "application/json; charset=utf-8",
+		error: function(jqXHR, textStatus, errorThrown){
+			logout();
+		}
+	});
+}
+
+function message(message, delay){
+	$("#error").hide();
+	if(typeof(delay)==='undefined') delay = 4000;
+	$("#message").show().text(message).delay(delay).fadeOut("slow");
+};
+
+function error(message, delay){
+	$("#message").hide();
+	if(typeof(delay)==='undefined') delay = 4000;
+	$("#error").show().text(message).delay(delay).fadeOut("slow");
+};
+

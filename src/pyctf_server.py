@@ -11,6 +11,7 @@ import logging
 import hashlib
 
 logger = logging.getLogger(__file__)
+logger.setLevel(logging.DEBUG)
 
 root = os.path.abspath(os.path.dirname(__file__))
 
@@ -95,6 +96,11 @@ def check_auth(token, role="user"):
         bottle.abort(403, "Not authorized to view this area")
 
     return auth_tokens[token]['user']
+
+@app.route("/user/auth_refresh", method="post")
+def rest_auth_refresh():
+    check_auth(bottle.request.json['auth_token'])
+    return {"refresh": True}
 
 
 @app.route("/user/change_password", method="post")
@@ -183,6 +189,7 @@ def list_questions():
     return {"data":
             [[k, v.get('title'), v.get('tags')] for k, v in questions.items()]}
 
+
 @app.route("/question/<question_number>")
 def rest_question(question_number):
     return get_question(question_number)
@@ -192,12 +199,13 @@ def get_question(question_number):
     match_data = questions[question_number]
     uid = uuid.uuid4().hex
     out = dict(time_limit=match_data['time_limit'], title="",
-               token=uid, question="", data=None, media=None)
+               token=uid, question="", data=None, media=None, answer_type=None)
 
     data = match_data if "question_script" not in match_data \
         else run_process(match_data['question_script'])
 
     out['title'] = data.get('title', "")
+    out['answer_type'] = data.get('answer_type', None)
     out['question'] = data['question']
     out['data'] = data.get('data', None)
     if "media" in data:
@@ -217,6 +225,7 @@ def get_question(question_number):
 @app.route("/answer/<question_number>", method="post")
 def rest_check_answer(question_number):
     incoming_data = bottle.request.json
+    logger.debug("Incoming answer: {0}".format(incoming_data))
     user = check_auth(incoming_data['auth_token'])
     uid = incoming_data['token']
     answer = incoming_data['answer']
@@ -272,7 +281,8 @@ def check_answer(answer, user, token, question_number):
 def get_score():
     auth_token = bottle.request.json['auth_token']
     user = check_auth(auth_token)
-    return dict(score=scores[user]['points'])
+    return dict(score=scores[user]['points'],
+                completed=scores[user]['completed'])
 
 
 @app.route("/scoreboard")

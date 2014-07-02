@@ -13,7 +13,7 @@
         "seed": "4Rf58Ik12",
         "encoding": "utf-8",
         "auth_time_limit": 2400,
-        "anonymous_users": true,
+        "anonymous_users": false,
         "save_auth": true
     },
     "questions" : {
@@ -21,7 +21,8 @@
             "title": "Basic intro",
             "question": "what is 1 + 1?",
             "answer": 2,
-            "time_limit": 10
+            "time_limit": 10,
+            "answer_type": "int"
         },
         "2": {
             "question_script": "python example_script.py -q",

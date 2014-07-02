@@ -17,6 +17,10 @@
                 <div id="go_scoreboard" class="menuitem" style="border-right: none">Scoreboard</div>
             </div>
         </div>
+        <div id="message_area">
+            <div id="message"></div>
+            <div id="error"></div>
+        </div>
         <div id="content">
             <div id="leftcol">
                 <div id="home_body">
@@ -37,12 +41,19 @@
                 <div id="question_body">
                     <div id="question_breadcrumbs"><span id="bc_questions">Questions</span> > <span id="bc_question_number"></span> </div>
                     <div id="question_title"></div>
-                    <div id="question_text"></div>
-                    <div id="data_text"></div>
-                    <div id="download_media"></div>
-                    <div id="answer_box"><textarea name="answer"></textarea><br />
-                    <input id="submit_answer" type="button" value="Answer" name="submit_answer" />
-                    </div>
+
+                    <table>
+                    <tr> <td width="100px"><b>Question</b></td> <td> <div id="question_text"></div></td> </tr>
+                    <tr id="data_row"> <td><b>Data </b></td> <td> <div id="data_text"></div> </td> </tr>
+                    <tr id="download_row"> <td><b>Media </b></td> <td><div id="download_media"></div> </td> </tr>
+
+                    <tr> <td> <b>Answer </b>  </td> <td> <textarea name="answer"  id="answer_box"></textarea><br /> </td> </tr>
+                    <input type="hidden" id="token" value="" />
+                    <input type="hidden" id="question_number" value="" />
+                    <input type="hidden" id="answer_type" value="" />
+                    <tr> <td colspan="2"> <input id="submit_answer" type="button" value="Answer" name="submit_answer" /> </td> </tr>
+                    </table>
+
 
 
                 </div>
@@ -68,8 +79,9 @@
                 </div>
 
 
-                <div id="userinfo">
-
+                <div id="userinfo" style="display:none">
+                    <div id="user_message"></div>
+                    <div id="logout"><button id="logout_button">Logout</button></div>
                 </div>
 
             </div>
