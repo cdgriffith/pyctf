@@ -5,6 +5,8 @@ $("#go_questions").click(go_questions);
 $("#go_scoreboard").click(go_scoreboard);
 
 
+var current_page = "home";
+
 function on_page_load(){
 
 	if (typeof $.cookie('pyctf_auth_token') === "undefined"){
@@ -26,7 +28,8 @@ function clear_body(){
 	$("#leftcol").children().hide();
 };
 
-function change_page(menu_item, body_id){
+function change_page(menu_item, body_id, page_name){
+    current_page = page_name;
 	clear_body();
 	clear_top_menu();
 	$(menu_item).addClass("menu-select");
@@ -34,12 +37,13 @@ function change_page(menu_item, body_id){
 };
 
 function go_home(){
-	change_page("#go_home", "#home_body");
+
+	change_page("#go_home", "#home_body", "home");
 };
 
 
 function go_questions(){
-	change_page("#go_questions", "#question_list_body");
+	change_page("#go_questions", "#question_list_body", "question");
 
 	$('#question_table_area').html( '<table cellpadding="0" cellspacing="0" border="0" class="display cell-border" id="question_table"></table>' );
 
@@ -66,7 +70,7 @@ function go_questions(){
 };
 
 function go_scoreboard(){
-	change_page("#go_scoreboard", "#scoreboard_body");
+	change_page("#go_scoreboard", "#scoreboard_body", "scoreboard");
 
 	$('#scoreboard_table_area').html( '<table cellpadding="0" cellspacing="0" border="0" class="display" id="scoreboard_table"></table>' );
 
@@ -81,7 +85,9 @@ function go_scoreboard(){
 };
 
 function go_single_question(question_number){
+    current_page = "single_question";
 	if (! question_number){
+	    error("Question number not specified");
 		return;
 	};
 
@@ -91,11 +97,17 @@ function go_single_question(question_number){
 	$.ajax({
 		url: "/question/" + question_number,
 		dataType: "json",
-		success: function(data){set_question(question_number, data)},
-		error: go_home
+		success: function(data){
+		    set_question(question_number, data);
+		    },
+		error: function(jqXHR, textStatus, errorThrown){
+            error(errorThrown);
+            go_questions();
+            }
 	});
 
 };
+var timeout_token = none;
 
 function set_question(question_number, ajax_data){
 	var title = ajax_data.title;
@@ -104,6 +116,7 @@ function set_question(question_number, ajax_data){
 	var timeout = ajax_data.timeout;
 	var media = ajax_data.media;
 	var token = ajax_data.token;
+	var time_limit = ajax_data.time_limit;
 	var answer_type  = ajax_data.answer_type;
 
 	$("#bc_question_number").text(question_number);
@@ -117,7 +130,16 @@ function set_question(question_number, ajax_data){
 		$("#download_media").html("<a href='"+ media +"' target='_blank'><button>Download</button></a>");
 	}
 
-	$("#question_title").html("<h3>" + question_number+ " : " + title + "</h3>");
+	if(time_limit === 0){
+		$("#timeout_row").hide();
+	}
+	else {
+		$("#timeout_row").show();
+		$("#timeout").text(time_limit);
+		timeout_token = setInterval(timeout_question, 1000);
+	}
+
+	$("#question_title").html("<h2>" + question_number+ " : " + title + "</h2>");
 	$("#question_text").text(question);
 	$("#token").val(token);
 	$("#question_number").val(question_number);
@@ -141,6 +163,35 @@ function set_question(question_number, ajax_data){
 	}
 
 };
+
+function reset_question(){
+    var question_number = $("#question_number").val();
+    go_single_question(question_number);
+};
+
+
+function timeout_question(){
+    if( current_page != "single_question"){
+        clearInterval(timeout_token);
+        return;
+    }
+    var timeout = parseInt($("#timeout").text());
+    var new_timeout = timeout - 1;
+    $("#timeout").text(new_timeout);
+    if( new_timeout == 0){
+        clearInterval(timeout_token);
+        message("Timeout reached, please update question for new data");
+        $("#timeout").html("<button id='reset_question'>Update question</button>");
+        $("#reset_question").off("click").click(reset_question);
+        $.ajax({
+            url: "/recover_token",
+            type: "POST",
+            dataType: "json",
+            data: JSON.stringify({"token": $("#token").val()}),
+            contentType: "application/json; charset=utf-8"
+        });
+    }
+}
 
 function answer_question(){
 
@@ -179,8 +230,7 @@ function answer_question(){
 			};
 		},
 		error: function(jqXHR, textStatus, errorThrown){
-			alert(textStatus);
-			alert(errorThrown);
+            error(errorThrown);
 			go_single_question(question_number);
 
 		}
@@ -209,7 +259,7 @@ function login(){
 	username = $("#login_user").val();
 	password = $("#login_password").val();
 	if (username == "" || password == ""){
-		alert("Please provide a username and password");
+		error("Please provide a username and password");
 		return;
 	}
 

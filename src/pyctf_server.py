@@ -187,7 +187,8 @@ def list_questions():
 @app.route("/questions/list")
 def list_questions():
     return {"data":
-            [[k, v.get('title'), v.get('tags')] for k, v in questions.items()]}
+            [[k, v.get('title'), ", ".join(v.get('tags', []))]
+             for k, v in questions.items()]}
 
 
 @app.route("/question/<question_number>")
@@ -198,16 +199,16 @@ def rest_question(question_number):
 def get_question(question_number):
     match_data = questions[question_number]
     uid = uuid.uuid4().hex
-    out = dict(time_limit=match_data['time_limit'], title="",
+    out = dict(time_limit=match_data['time_limit'], title=match_data['title'],
                token=uid, question="", data=None, media=None, answer_type=None)
 
     data = match_data if "question_script" not in match_data \
         else run_process(match_data['question_script'])
 
-    out['title'] = data.get('title', "")
     out['answer_type'] = data.get('answer_type', None)
     out['question'] = data['question']
     out['data'] = data.get('data', None)
+
     if "media" in data:
         out['media'] = "/media/{0}".format(data['media'])
     else:
@@ -298,8 +299,12 @@ def get_score():
 @app.route("/recover_token", method="post")
 def recover_token():
     token = bottle.request.json['token']
-    del limits[token]
-    save_state()
+    try:
+        del limits[token]
+    except KeyError:
+        pass
+    else:
+        save_state()
     return {}
 
 
