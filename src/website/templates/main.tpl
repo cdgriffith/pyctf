@@ -20,6 +20,7 @@
         <div id="message_area">
             <div id="message"></div>
             <div id="error"></div>
+            <div id="success"></div>
         </div>
         <div id="content">
             <div id="leftcol">

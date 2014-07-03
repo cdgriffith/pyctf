@@ -151,7 +151,19 @@ float:right;
 	font-size: 20px;
 	width:100%;
 	display:none;
-	background: green;
+	color: #fff;
+	text-align: center;
+	padding-top: 5px;
+	font-weight: bold;
+}
+
+
+#success{
+	height: 100%;
+	font-size: 20px;
+	width:100%;
+	display:none;
+	background: url('/static/images/success_message_background.png') no-repeat;
 	color: #fff;
 	text-align: center;
 	padding-top: 5px;
@@ -163,8 +175,8 @@ float:right;
 	font-size: 20px;
 	width:100%;
 	display:none;
-	background: red;
-	color: #000;
+	background: url('/static/images/error_message_background.png') no-repeat;
+	color: #fff;
 	text-align: center;
 	padding-top:5px;
 	font-weight: bold;

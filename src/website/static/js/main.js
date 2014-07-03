@@ -87,7 +87,7 @@ function go_scoreboard(){
 function go_single_question(question_number){
     current_page = "single_question";
 	if (! question_number){
-	    error("Question number not specified");
+	    message("Question number not specified");
 		return;
 	};
 
@@ -101,7 +101,7 @@ function go_single_question(question_number){
 		    set_question(question_number, data);
 		    },
 		error: function(jqXHR, textStatus, errorThrown){
-            error(errorThrown);
+            message(errorThrown);
             go_questions();
             }
 	});
@@ -136,9 +136,11 @@ function set_question(question_number, ajax_data){
 	else {
 		$("#timeout_row").show();
 		$("#timeout").text(time_limit);
+		if( timeout_token){clearInterval(timeout_token);}
 		timeout_token = setInterval(timeout_question, 1000);
 	}
 
+    $("#answer_box").val('');
 	$("#question_title").html("<h2>" + question_number+ " : " + title + "</h2>");
 	$("#question_text").text(question);
 	$("#token").val(token);
@@ -166,6 +168,7 @@ function set_question(question_number, ajax_data){
 
 function reset_question(){
     var question_number = $("#question_number").val();
+    if( timeout_token){clearInterval(timeout_token);}
     go_single_question(question_number);
 };
 
@@ -221,7 +224,7 @@ function answer_question(){
         contentType: "application/json; charset=utf-8",
 		success: function(data){
 			if (data.correct){
-				message("Correct!");
+				success("Correct!");
 				go_scoreboard();
 				}
 			else{
@@ -230,7 +233,7 @@ function answer_question(){
 			};
 		},
 		error: function(jqXHR, textStatus, errorThrown){
-            error(errorThrown);
+            message(errorThrown);
 			go_single_question(question_number);
 
 		}
@@ -259,7 +262,7 @@ function login(){
 	username = $("#login_user").val();
 	password = $("#login_password").val();
 	if (username == "" || password == ""){
-		error("Please provide a username and password");
+		message("Please provide a username and password");
 		return;
 	}
 
@@ -278,7 +281,7 @@ function login(){
 			show_user(username);
 		},
 		error: function(jqXHR, textStatus, errorThrown){
-			error("Could not login - please try again");
+			message("Could not login - please try again");
 		}
 	});
 
@@ -306,12 +309,21 @@ function auth_refresh(){
 
 function message(message, delay){
 	$("#error").hide();
+	$("#success").hide();
 	if(typeof(delay)==='undefined') delay = 4000;
 	$("#message").show().text(message).delay(delay).fadeOut("slow");
 };
 
+function success(message, delay){
+	$("#error").hide();
+	$("#message").hide();
+	if(typeof(delay)==='undefined') delay = 4000;
+	$("#success").show().text(message).delay(delay).fadeOut("slow");
+};
+
 function error(message, delay){
 	$("#message").hide();
+	$("#success").hide();
 	if(typeof(delay)==='undefined') delay = 4000;
 	$("#error").show().text(message).delay(delay).fadeOut("slow");
 };
