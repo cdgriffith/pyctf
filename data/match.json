@@ -14,7 +14,8 @@
         "encoding": "utf-8",
         "auth_time_limit": 2400,
         "anonymous_users": false,
-        "save_auth": true
+        "save_auth": true,
+        "welcome_message": "<h2>Welcome to PyCTF!</h2> <p>Welcome to the example PyCTF Challenges.</p>"
     },
     "questions" : {
         "1": {

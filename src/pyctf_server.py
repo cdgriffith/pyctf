@@ -45,6 +45,11 @@ def media_file(filename):
     return bottle.static_file(filename=filename,
                               root=os.path.abspath(config['media_directory']))
 
+@app.route("/server_info")
+def server_info():
+    return {"welcome_message": config['welcome_message'],
+            "anonymous_users": config['anonymous_users'],
+            "encoding": config['encoding']}
 
 ######################### User Management #####################################
 

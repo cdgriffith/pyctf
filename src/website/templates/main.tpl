@@ -26,7 +26,7 @@
             <div id="leftcol">
                 <div id="home_body">
                     <h1>Home</h1>
-
+                    <div id="welcome_message"> </div>
                 </div>
 
                 <div id="question_list_body">

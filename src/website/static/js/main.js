@@ -17,6 +17,18 @@ function on_page_load(){
 		$("#login").hide();
 		show_user($.cookie('pyctf_auth_user'));
 	}
+
+	$.ajax({
+		url: "/server_info",
+		dataType: "json",
+		success: function(data){
+                $("#welcome_message").html(data.welcome_message);
+		    },
+		error: function(jqXHR, textStatus, errorThrown){
+            message(errorThrown);
+            }
+	});
+
 };
 
 
@@ -37,8 +49,8 @@ function change_page(menu_item, body_id, page_name){
 };
 
 function go_home(){
-
 	change_page("#go_home", "#home_body", "home");
+
 };
 
 
