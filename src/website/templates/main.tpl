@@ -80,6 +80,7 @@
 
                 <div id="userinfo" style="display:none">
                     <div id="user_message"></div>
+                    <div>Score: <span id="user_score">0</span></div>
                     <div id="logout"><button id="logout_button">Logout</button></div>
                 </div>
 

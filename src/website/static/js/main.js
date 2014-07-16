@@ -29,6 +29,8 @@ function on_page_load(){
             }
 	});
 
+	go_home();
+
 };
 
 
@@ -46,7 +48,29 @@ function change_page(menu_item, body_id, page_name){
 	clear_top_menu();
 	$(menu_item).addClass("menu-select");
 	$(body_id).show();
+
+    update_score();
 };
+
+function update_score(){
+
+    if ( $.cookie("pyctf_auth_token") == null ){
+        return
+    }
+
+	$.ajax({
+		url: "/score",
+		type: "POST",
+		dataType: "json",
+         data: JSON.stringify({"auth_token": $.cookie("pyctf_auth_token")}),
+        contentType: "application/json; charset=utf-8",
+		success: function(data){
+		        $("#user_score").text(data['score']);
+		    },
+		error: function(jqXHR, textStatus, errorThrown){
+            }
+	});
+}
 
 function go_home(){
 	change_page("#go_home", "#home_body", "home");
@@ -256,11 +280,12 @@ function answer_question(){
 function show_user(username){
 			$("#login").hide();
 			$("#userinfo").show();
-			$("#user_message").text("Welcome " + username);
+			$("#user_message").html("<h3>" + username + "</h3>");
 			$("#logout_button").off("click").click(logout);
 			$("#submit_answer").off("click").click(answer_question);
 			$("#submit_answer").prop('disabled', false);
 			$("#submit_answer").val("Submit");
+			update_score();
 }
 
 function show_login(){
