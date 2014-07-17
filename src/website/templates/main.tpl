@@ -54,11 +54,8 @@
                     <input type="hidden" id="answer_type" value="" />
                     <tr> <td colspan="2"> <input id="submit_answer" type="button" value="Answer" name="submit_answer" /> </td> </tr>
                     </table>
-
                 </div>
-
             </div>
-
 
             <div id="rightcol">
                 <div id="login">
@@ -77,15 +74,12 @@
                     </form>
                 </div>
 
-
                 <div id="userinfo" style="display:none">
                     <div id="user_message"></div>
-                    <div>Score: <span id="user_score">0</span></div>
+                    <div id="user_score_area">Score: <span id="user_score">0</span></div>
                     <div id="logout"><button id="logout_button">Logout</button></div>
                 </div>
-
             </div>
-
         </div>
     </div>
 
