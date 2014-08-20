@@ -20,6 +20,7 @@ auth, auth_tokens, limits = dict(), dict(), dict()
 
 app = bottle.Bottle()
 
+
 class PyCTFError(Exception):
     pass
 
@@ -290,7 +291,9 @@ def recover_token():
 
 def run_process(command, stdin=None, timeout=15):
         p = Popen(command, shell=True, stdout=PIPE,
-                  stderr=PIPE, stdin=PIPE)
+                  stderr=PIPE, stdin=PIPE,
+                  cwd=os.path.abspath(os.path.join(config['working_directory'],
+                                                   config['script_directory'])))
 
         stdin = None if not stdin else stdin.encode("utf-8")
         stdout, stderr = p.communicate(input=stdin, timeout=timeout)
@@ -318,7 +321,9 @@ def update_score(user, question):
 @app.route("/media/<filename:path>")
 def media_file(filename):
     return bottle.static_file(filename=filename,
-                              root=os.path.abspath(config['media_directory']))
+                              root=os.path.abspath(os.path.join(
+                                  config['working_directory'],
+                                  config['media_directory'])))
 
 
 @app.route("/server_info")
@@ -396,11 +401,22 @@ def enable_ssl(key, cert, host, port):
     return SSLServer
 
 
+def get_user_arguments():
+    import argparse
+
+    default_match = os.path.join(root, "../data/match.json")
+
+    parser = argparse.ArgumentParser(description="PyCTF SERVER")
+    parser.add_argument("-m", "--match", help="Path to JSON match file",
+                        default=default_match)
+
+    return parser.parse_args()
+
 if __name__ == '__main__':
-    import sys
-    default_file = os.path.join(root, "../data/match.json")
-    json_file = default_file if len(sys.argv) != 2 else sys.argv[1]
-    prepare_server(json_file)
+
+    args = get_user_arguments()
+
+    prepare_server(args.match)
 
     server = 'wsgiref' if not config.get('ssl') else enable_ssl(
         key=config['ssl_key'], cert=config['ssl_cert'],
