@@ -1,15 +1,9 @@
 {
     "admin": {
+        "password": "091e6d8885ee79f49a11b4672f67ea5fdd092a2405a79ffab4dcc47c6910a1fe",
         "roles": [
-            "admin",
-            "user"
-        ],
-        "password": "091e6d8885ee79f49a11b4672f67ea5fdd092a2405a79ffab4dcc47c6910a1fe"
-    },
-    "user": {
-        "roles": [
-            "user"
-        ],
-        "password": "75ec4177a9cd120214e998997970882e5ccf6b86786da0766e81765699d292c1"
+            "user",
+            "admin"
+        ]
     }
 }

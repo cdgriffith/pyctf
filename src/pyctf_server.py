@@ -20,36 +20,8 @@ auth, auth_tokens, limits = dict(), dict(), dict()
 
 app = bottle.Bottle()
 
-bottle.TEMPLATE_PATH.append(os.path.join(root, "website", "templates"))
-
-
 class PyCTFError(Exception):
     pass
-
-############################## Website ########################################
-
-@app.route("/")
-@bottle.view("main")
-def main_page():
-    return {}
-
-
-@app.route("/static/<filename:path>")
-def static_file(filename):
-    return bottle.static_file(filename=filename,
-                              root=os.path.join(root, "website", "static"))
-
-
-@app.route("/media/<filename:path>")
-def media_file(filename):
-    return bottle.static_file(filename=filename,
-                              root=os.path.abspath(config['media_directory']))
-
-@app.route("/server_info")
-def server_info():
-    return {"welcome_message": config['welcome_message'],
-            "anonymous_users": config['anonymous_users'],
-            "encoding": config['encoding']}
 
 ######################### User Management #####################################
 
@@ -158,7 +130,7 @@ def add_user(user, password, admin=False):
 
     auth[user] = dict(password=hash_pass(password), roles=['user'])
     if admin:
-        auth[user].append("admin")
+        auth[user]['roles'].append("admin")
     save_auth()
 
 
@@ -287,8 +259,11 @@ def check_answer(answer, user, token, question_number):
 def get_score():
     auth_token = bottle.request.json['auth_token']
     user = check_auth(auth_token)
-    return dict(score=scores[user]['points'],
-                completed=scores[user]['completed'])
+    if user not in scores:
+        return dict(score=0, completed=[])
+    else:
+        return dict(score=scores[user]['points'],
+                    completed=scores[user]['completed'])
 
 
 @app.route("/scoreboard")
@@ -340,6 +315,19 @@ def update_score(user, question):
 
 ################################# Server #####################################
 
+@app.route("/media/<filename:path>")
+def media_file(filename):
+    return bottle.static_file(filename=filename,
+                              root=os.path.abspath(config['media_directory']))
+
+
+@app.route("/server_info")
+def server_info():
+    return {"welcome_message": config['welcome_message'],
+            "anonymous_users": config['anonymous_users'],
+            "encoding": config['encoding']}
+
+
 def save_state():
     if config['save_state']:
         with open(config['save_file'], "w", encoding="utf-8") as f:
@@ -352,6 +340,10 @@ def save_auth():
             json.dump(fp=f, obj=auth, indent=4)
 
 
+def find_admins(users):
+    return [user for user in users if 'admin' in users[user]['roles']]
+
+
 def prepare_server(match_file):
     global questions, config, limits, auth, scores
 
@@ -361,12 +353,14 @@ def prepare_server(match_file):
     questions = content['questions']
     config = content['server']
 
-    root = os.path.abspath(os.path.dirname(__file__))
     os.chdir(os.path.join(root, config['working_directory']))
 
     if os.path.exists(config['auth_file']):
         with open(config['auth_file'], encoding="utf-8") as f:
             auth = json.load(fp=f)
+
+    if not find_admins(auth):
+        add_user('admin', 'admin', admin=True)
 
     if config['save_state']:
         if os.path.exists(config['save_file']):
@@ -404,12 +398,18 @@ def enable_ssl(key, cert, host, port):
 
 if __name__ == '__main__':
     import sys
-    json_file = "../data/match.json" if len(sys.argv) != 2 else sys.argv[1]
+    default_file = os.path.join(root, "../data/match.json")
+    json_file = default_file if len(sys.argv) != 2 else sys.argv[1]
     prepare_server(json_file)
 
     server = 'wsgiref' if not config.get('ssl') else enable_ssl(
         key=config['ssl_key'], cert=config['ssl_cert'],
         host=config['host'], port=config['port'])
+
+    if config['website']:
+        import pyctf_website
+        pyctf_website.config = config
+        app.merge(pyctf_website.app.routes)
 
     bottle.run(app, host=config['host'], port=config['port'], server=server)
 
