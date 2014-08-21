@@ -30,13 +30,13 @@ If there is any information sent to `STDERR` an exception will be raised and log
     }
 ```
 
-Value         Type     Description
-------------- -------- ----------------
- question\*   String    The question generated for the user to provide a response to
- data         Any       Additional data the question can reference
- answer_type  String    Describe the type of response expected "integer", "list", "string" or "dictionary"
- storage      Any       Question specific information used to identify this question
- media        String    Name of additional media file in the `media` directory
+Value         | Type     | Description
+------------- | -------- | ----------------
+ question\*   | String   | The question generated for the user to provide a response to
+ data         | Any      | Additional data the question can reference
+ answer_type  | String   | Describe the type of response expected "integer", "list", "string" or "dictionary"
+ storage      | Any      | Question specific information used to identify this question
+ media        | String   | Name of additional media file in the `media` directory
  
  \* Required
  
@@ -60,11 +60,11 @@ the data originally sent to the user, as well as the `storage` field.
 
 ```
 
-Value     Type     Description
---------- -------- ----------------
- answer    Any      The user's answer
- data      Any      Additional data the question can reference
- storage   Any      Question specific information used to identify the question
+Value     | Type     | Description
+--------- | -------- | ----------------
+ answer   |  Any     | The user's answer
+ data     |  Any     | Additional data the question can reference
+ storage  |  Any     | Question specific information used to identify the question
  
  
  After the JSON string is sent via STDIN, the answer is expected to send back a JSON response on STDOUT with a 
@@ -81,9 +81,9 @@ Value     Type     Description
 
 ```
 
-Value         Type       Description
-------------  ---------  ----------------
- correct\*     Boolean   `true` if it is a correct answer, else `false` 
+Value        | Type      | Description
+------------ | --------- | ----------------
+ correct\*   |  Boolean  | `true` if it is a correct answer, else `false` 
  
  \* Required
   
