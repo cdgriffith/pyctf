@@ -175,13 +175,13 @@ def rest_question(question_number):
 
 
 def get_question(question_number):
-    match_data = questions[question_number]
+    data = questions[question_number]
     uid = uuid.uuid4().hex
-    out = dict(time_limit=match_data['time_limit'], title=match_data['title'],
+    out = dict(time_limit=data['time_limit'], title=data['title'],
                token=uid, question="", data=None, media=None, answer_type=None)
 
-    data = match_data if "question_script" not in match_data \
-        else run_process(match_data['question_script'])
+    if "question_script" in data:
+        data.update(run_process(data['question_script']))
 
     out['answer_type'] = data.get('answer_type', None)
     out['question'] = data['question']
@@ -292,8 +292,7 @@ def recover_token():
 def run_process(command, stdin=None, timeout=15):
         p = Popen(command, shell=True, stdout=PIPE,
                   stderr=PIPE, stdin=PIPE,
-                  cwd=os.path.abspath(os.path.join(config['working_directory'],
-                                                   config['script_directory'])))
+                  cwd=config['abs_script_directory'])
 
         stdin = None if not stdin else stdin.encode("utf-8")
         stdout, stderr = p.communicate(input=stdin, timeout=timeout)
@@ -321,9 +320,7 @@ def update_score(user, question):
 @app.route("/media/<filename:path>")
 def media_file(filename):
     return bottle.static_file(filename=filename,
-                              root=os.path.abspath(os.path.join(
-                                  config['working_directory'],
-                                  config['media_directory'])))
+                              root=config['abs_media_directory'])
 
 
 @app.route("/server_info")
@@ -349,6 +346,25 @@ def find_admins(users):
     return [user for user in users if 'admin' in users[user]['roles']]
 
 
+def verify_directories_exist():
+    if not os.path.exists(config['working_directory']):
+        os.makedirs(config['working_directory'])
+
+    abs_script_dir = os.path.abspath(os.path.join(config['working_directory'],
+                                                  config['script_directory']))
+
+    abs_media_dir = os.path.abspath(os.path.join(config['working_directory'],
+                                                 config['media_directory']))
+
+    if not os.path.exists(abs_script_dir):
+        os.makedirs(abs_script_dir)
+
+    if not os.path.exists(abs_media_dir):
+        os.makedirs(abs_media_dir)
+
+    return abs_script_dir, abs_media_dir
+
+
 def prepare_server(match_file):
     global questions, config, limits, auth, scores
 
@@ -357,6 +373,11 @@ def prepare_server(match_file):
 
     questions = content['questions']
     config = content['server']
+
+    script_dir, media_dir = verify_directories_exist()
+
+    config['abs_media_directory'] = media_dir
+    config['abs_script_directory'] = script_dir
 
     os.chdir(os.path.join(root, config['working_directory']))
 

@@ -4,6 +4,9 @@
 from webtest import TestApp
 import unittest
 import pyctf_server as ps
+import os
+
+root = os.path.abspath(os.path.dirname(__file__))
 
 
 class TestPyCTFServer(unittest.TestCase):
@@ -11,6 +14,11 @@ class TestPyCTFServer(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         ps.prepare_server("test_match.json")
+
+    @classmethod
+    def tearDownClass(cls):
+        os.rmdir(os.path.join(root, "media"))
+        os.rmdir(os.path.join(root, "scripts"))
 
     def test_login(self):
         assert ps.login("user", "user")
@@ -56,6 +64,11 @@ class TestPyCTFServerFunctional(unittest.TestCase):
     def setUpClass(cls):
         ps.prepare_server("test_match.json")
         cls.app = TestApp(ps.app)
+
+    @classmethod
+    def tearDownClass(cls):
+        os.rmdir(os.path.join(root, "media"))
+        os.rmdir(os.path.join(root, "scripts"))
 
     def setUp(self):
         self.app.reset()

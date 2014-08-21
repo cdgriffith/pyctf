@@ -3,6 +3,8 @@
         "port": 47276,
         "host": "localhost",
         "working_directory": "../test",
+        "media_directory": "media",
+        "script_directory": "scripts",
         "ssl": false,
         "ssl_cert": "",
         "ssl_key": "",
