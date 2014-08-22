@@ -9,7 +9,8 @@ Interface              |  Method   |              Body                          
 ---------------------- | --------- | ------------------------------------------ | ----------------------
 /login                 |  POST     |          user, password                    | auth_token, timeout
 /user/auth_refresh     |  POST     |             auth_token                     |  refresh
-/user/change_password  |  POST     |   auth_token, password, old_password       |  changed
+/user/change_password  |  POST     |   auth_token  , old_password               |  changed
+                       |           |                 password                   |
 /user/add              |  POST     |   auth_token, user, password, admin\*      | error\*
 /user/remove           |  POST     |   auth_token, user                         | 
 

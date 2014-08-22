@@ -24,7 +24,9 @@ app = bottle.Bottle()
 class PyCTFError(Exception):
     pass
 
+
 ######################### User Management #####################################
+
 
 @app.route("/login", method="post")
 def rest_login():
@@ -35,7 +37,8 @@ def rest_login():
     try:
         return {"auth_token": login(user, password),
                 "timeout": config['auth_time_limit']}
-    except Exception:
+    except Exception as err:
+        logger.exception(str(err))
         bottle.redirect("/login", code=403)
 
 
@@ -74,6 +77,7 @@ def check_auth(token, role="user"):
         bottle.abort(403, "Not authorized to view this area")
 
     return auth_tokens[token]['user']
+
 
 @app.route("/user/auth_refresh", method="post")
 def rest_auth_refresh():
@@ -161,6 +165,7 @@ def remove_user(user):
 def list_questions():
     return {k: {"title": v.get('title'), "tags": v.get('tags')}
             for k, v in questions.items()}
+
 
 @app.route("/questions/list")
 def list_questions():
@@ -270,6 +275,7 @@ def get_score():
 @app.route("/scoreboard")
 def get_score():
     return {x: scores[x]['points'] for x in scores}
+
 
 @app.route("/scoreboard/list")
 def get_score():
@@ -392,12 +398,12 @@ def prepare_server(match_file):
         if os.path.exists(config['save_file']):
             try:
                 with open(config['save_file'], encoding="utf-8") as f:
-                    save_state = json.load(fp=f)
+                    saved_state = json.load(fp=f)
             except (OSError, ValueError):
                 logger.warning("Could not load data from previous save file")
             else:
-                limits.update(save_state.get('tokens', dict()))
-                scores.update(save_state.get('scores', dict()))
+                limits.update(saved_state.get('tokens', dict()))
+                scores.update(saved_state.get('scores', dict()))
 
 
 def enable_ssl(key, cert, host, port):
@@ -406,6 +412,7 @@ def enable_ssl(key, cert, host, port):
 
     class SSLServer(bottle.ServerAdapter):
 
+        # noinspection PyMissingConstructor
         def __init__(self, **options):
             self.host = host
             self.port = port
@@ -449,5 +456,3 @@ if __name__ == '__main__':
         app.merge(pyctf_website.app.routes)
 
     bottle.run(app, host=config['host'], port=config['port'], server=server)
-
-
