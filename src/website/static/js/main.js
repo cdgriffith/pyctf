@@ -7,7 +7,7 @@ $("#go_scoreboard").click(go_scoreboard);
 
 var current_page = "home";
 
-function on_page_load(){
+function on_page_load() {
 
 	if (typeof $.cookie('pyctf_auth_token') === "undefined"){
 		$("#login_button").click(login);
@@ -31,17 +31,16 @@ function on_page_load(){
 
 	go_home();
 
-};
+}
 
 
 function clear_top_menu(){
 	$(".menuitem").removeClass("menu-select");
-};
+}
 
 function clear_body(){
 	$("#leftcol").children().hide();
-};
-
+}
 function change_page(menu_item, body_id, page_name){
     current_page = page_name;
 	clear_body();
@@ -50,7 +49,7 @@ function change_page(menu_item, body_id, page_name){
 	$(body_id).show();
 
     update_score();
-};
+}
 
 function update_score(){
 
@@ -75,9 +74,7 @@ function update_score(){
 function go_home(){
 	change_page("#go_home", "#home_body", "home");
 
-};
-
-
+}
 function go_questions(){
 	change_page("#go_questions", "#question_list_body", "question");
 
@@ -87,15 +84,15 @@ function go_questions(){
         "aoColumns": [
         { "sTitle": "Question",  "sWidth": "15%" },
         { "sTitle": "Title", "sWidth": "60%" },
-        { "sTitle": "Tags", "sWidth": "25%" },
-    ],
+        { "sTitle": "Tags", "sWidth": "25%" }
+        ],
     	"table": ["cell-border"],
         "ajax": "/questions/list",
         "pageLength": 25
 
     } );
 
-	$('#question_table tbody').on( 'click', 'tr', function () {
+	$('#question_table').find('tbody').on( 'click', 'tr', function () {
 		var data = table.row(this).data();
 		if (! data){
 			return;
@@ -103,7 +100,7 @@ function go_questions(){
 		go_single_question(data[0]);
 	} );
 
-};
+}
 
 function go_scoreboard(){
 	change_page("#go_scoreboard", "#scoreboard_body", "scoreboard");
@@ -118,16 +115,15 @@ function go_scoreboard(){
         "order": [[ 1, "desc" ]],
         "pageLength": 10
     } );
-};
+}
 
 function go_single_question(question_number){
     current_page = "single_question";
 	if (! question_number){
 	    message("Question number not specified");
 		return;
-	};
-
-	clear_body();
+    }
+    clear_body();
 	$("#question_body").show();
 
 	$.ajax({
@@ -142,8 +138,9 @@ function go_single_question(question_number){
             }
 	});
 
-};
-var timeout_token = none;
+}
+
+var timeout_token = null;
 
 function set_question(question_number, ajax_data){
 	var title = ajax_data.title;
@@ -188,9 +185,8 @@ function set_question(question_number, ajax_data){
 		$("#data_row").show();
 	}else{
 		$("#data_row").hide();
-	};
-
-	if(typeof $.cookie("pyctf_auth_token") === "undefined"){
+    }
+    if(typeof $.cookie("pyctf_auth_token") === "undefined"){
 		$("#submit_answer").prop('disabled', true).val("Please login");
 	}
 	else {
@@ -200,14 +196,13 @@ function set_question(question_number, ajax_data){
 		$("#submit_answer").off("click").click(answer_question);
 	}
 
-};
+}
 
 function reset_question(){
     var question_number = $("#question_number").val();
     if( timeout_token){clearInterval(timeout_token);}
     go_single_question(question_number);
-};
-
+}
 
 function timeout_question(){
     if( current_page != "single_question"){
@@ -266,8 +261,8 @@ function answer_question(){
 			else{
 				error("Incorrect");
 				go_single_question(question_number);
-			};
-		},
+            }
+        },
 		error: function(jqXHR, textStatus, errorThrown){
             message(errorThrown);
 			go_single_question(question_number);
@@ -296,8 +291,8 @@ function show_login(){
 }
 
 function login(){
-	username = $("#login_user").val();
-	password = $("#login_password").val();
+    var username = $("#login_user").val();
+    var password = $("#login_password").val();
 	if (username == "" || password == ""){
 		message("Please provide a username and password");
 		return;
@@ -322,14 +317,13 @@ function login(){
 		}
 	});
 
-};
+}
 
 function logout(){
 	$.removeCookie('pyctf_auth_token');
 	$.removeCookie('pyctf_auth_user');
 	show_login();
 }
-
 
 function auth_refresh(){
 	$.ajax({
@@ -349,19 +343,19 @@ function message(message, delay){
 	$("#success").hide();
 	if(typeof(delay)==='undefined') delay = 4000;
 	$("#message").show().text(message).delay(delay).fadeOut("slow");
-};
+}
 
 function success(message, delay){
 	$("#error").hide();
 	$("#message").hide();
 	if(typeof(delay)==='undefined') delay = 4000;
 	$("#success").show().text(message).delay(delay).fadeOut("slow");
-};
+}
 
 function error(message, delay){
 	$("#message").hide();
 	$("#success").hide();
 	if(typeof(delay)==='undefined') delay = 4000;
 	$("#error").show().text(message).delay(delay).fadeOut("slow");
-};
+}
 
