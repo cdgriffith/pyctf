@@ -28,7 +28,7 @@ Optional requirements:
 * requests (if using python client) 
 
 
-Basic usage
+Basic Usage
 -----------
 
 To start up a match, simply start off the `pyctf_server.py` python file under the 'src' directory. 

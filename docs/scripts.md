@@ -2,7 +2,7 @@ Custom Question and Answer Scripts
 ==================================
 
 Each question and answer can be generated then verified via external scripts.
-This allows for unique challenges for each contender. 
+This allows for unique challenges for each contender, however it is NOT required. 
 
 Your custom scripts are called from a shell, allowing for to be written in any language 
 the server machine can run. For example, a Java JAR file could be called like `java -jar my_custom_question.jar`. 
@@ -21,7 +21,6 @@ If there is any information sent to `STDERR` an exception will be raised and log
 **Example STDOUT from question script**
 
 ```json
-
     { 
       "question" : "Add the two numbers in the list provided in the data together",
       "data" : [2, 6],
@@ -30,11 +29,11 @@ If there is any information sent to `STDERR` an exception will be raised and log
     }
 ```
 
-Value         | Type     | Description
+Field         | Type     | Description
 ------------- | -------- | ----------------
  question\*   | String   | The question generated for the user to provide a response to
  data         | Any      | Additional data the question can reference
- answer_type  | String   | Describe the type of response expected "integer", "list", "string" or "dictionary"
+ answer_type  | String   | Describe the type of response expected `integer`, `list`, `string` or `dictionary`
  storage      | Any      | Question specific information used to identify this question
  media        | String   | Name of additional media file in the `media` directory
  
@@ -45,43 +44,39 @@ Value         | Type     | Description
 Answer Script
 -------------
  
-The answer script must accept a `JSON` string via `STDIN` after execution.  The JSON will always contain the users answer,
+The answer script must accept a `JSON` string via `STDIN` after execution.  The `JSON` will always contain the users answer,
 the data originally sent to the user, as well as the `storage` field.
 
 **Example STDIN to answer script**
 
 ```json
-
     { 
       "answer": 8,
       "data": [2, 6],
       "storage": "ADD" 
     }
-
 ```
 
-Value     | Type     | Description
+Field     | Type     | Description
 --------- | -------- | ----------------
  answer   |  Any     | The user's answer
  data     |  Any     | Additional data the question can reference
  storage  |  Any     | Question specific information used to identify the question
  
  
- After the JSON string is sent via STDIN, the answer is expected to send back a JSON response on STDOUT with a 
- single boolean field 'correct' with either true or false.
+ After the `JSON` string is sent via `STDIN`, the answer is expected to send back a `JSON` response on `STDOUT` with a 
+ single boolean field 'correct' with either `true` or `false`.
   
   
-**Example STDOUT from answer script**
+**Example `STDOUT` from answer script**
 
 ```json
-
     { 
       "correct": true 
     }
-
 ```
 
-Value        | Type      | Description
+Field        | Type      | Description
 ------------ | --------- | ----------------
  correct\*   |  Boolean  | `true` if it is a correct answer, else `false` 
  
