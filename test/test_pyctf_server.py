@@ -5,20 +5,34 @@ from webtest import TestApp
 import unittest
 import pyctf_server as ps
 import os
+import shutil
 
 root = os.path.abspath(os.path.dirname(__file__))
 
 
-class TestPyCTFServer(unittest.TestCase):
+def del333():
+    try:
+        del ps.questions['333']
+    except KeyError:
+        pass
+
+
+class TestPyCTF(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        shutil.copy("test_match.json", "original.json")
         ps.prepare_server("test_match.json")
 
     @classmethod
     def tearDownClass(cls):
         os.rmdir(os.path.join(root, "media"))
         os.rmdir(os.path.join(root, "scripts"))
+        os.unlink("test_match.json")
+        shutil.move("original.json", "test_match.json")
+
+
+class TestPyCTFServer(TestPyCTF):
 
     def test_login(self):
         assert ps.login("user", "user")
@@ -57,22 +71,63 @@ class TestPyCTFServer(unittest.TestCase):
         ps.remove_user('another_test_user')
         assert "another_test_user" not in ps.auth
 
+    def test_add_simple_question(self):
+        self.addCleanup(del333)
+        incoming_data = dict(question_number=333, question="what is 1+1?",
+                             answer=2, title="Example question")
+        ps.add_question(incoming_data)
+        assert "333" in ps.questions
+        incoming_data.pop("question_number")
+        assert len([x for x in incoming_data if
+                    incoming_data[x] == ps.questions['333'][x]]) == 3
 
-class TestPyCTFServerFunctional(unittest.TestCase):
+    def test_add_complex_question(self):
+        self.addCleanup(del333)
+        self.addCleanup(lambda: os.unlink(os.path.join(root,
+                                                       "media", "test_file")))
+        with open(os.path.join(root, "media", "test_file"), "w") as f:
+            f.write("me is a test!")
+        incoming_data = dict(question_number=333, question="add the data set",
+                             answer=7, title="Example question",
+                             points=4, data=[3, 4], media="test_file",
+                             tags=["hello", 'there'], answer_type="integer",
+                             time_limit=10)
+        ps.add_question(incoming_data)
+        assert "333" in ps.questions
+        incoming_data.pop("question_number")
+        assert ps.questions['333'] == incoming_data
+
+    def test_remove_question(self):
+        ps.questions["333"] = dict(question="what is 1+1?",
+                                   answer=2, title="Example question")
+        ps.delete_question(dict(question_number=333))
+        assert "333" not in ps.questions
+
+
+class TestPyCTFServerFailure(TestPyCTF):
+
+    def test_add_question_without_number(self):
+        incoming_data = dict(question="what is 1+1?",
+                             answer=2, title="Example question")
+        self.assertRaises(KeyError, ps.add_question, incoming_data)
+
+    def test_add_question_without_answer(self):
+        self.addCleanup(del333)
+        incoming_data = dict(question_number=333,
+                             question="what is 1+1?", title="Example question")
+        self.assertRaises(ps.PyCTFError, ps.add_question, incoming_data)
+
+
+class TestPyCTFServerFunctional(TestPyCTF):
 
     @classmethod
     def setUpClass(cls):
+        shutil.copy("test_match.json", "original.json")
         ps.prepare_server("test_match.json")
         cls.app = TestApp(ps.app)
 
-    @classmethod
-    def tearDownClass(cls):
-        os.rmdir(os.path.join(root, "media"))
-        os.rmdir(os.path.join(root, "scripts"))
-
     def setUp(self):
         self.app.reset()
-        pass
 
     def test_webapp_login(self):
         self.app.post_json("/login", {"user": "user", "password": "user"})

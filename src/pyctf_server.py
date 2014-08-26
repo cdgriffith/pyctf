@@ -231,16 +231,51 @@ def rest_add_question():
 def add_question(data):
     global questions
 
-    title = data['title']
     question_number = int(data['question_number'])
-    time_limit = 0 if 'time_limit' not in data else int(data['time_limit'])
-    points = 1 if 'points' not in data else int(data['points'])
-    assert points >= 0
 
     if question_number in questions:
         bottle.abort(400, "Question number already exists")
 
-    out = dict(time_limit=time_limit, title=title,  points=points)
+    out = process_common_question_fields(data, True)
+
+    questions[str(question_number)] = out
+    save_questions()
+
+
+def process_common_question_fields(data, required=False):
+    out = dict()
+
+    # Required fields
+
+    if "title" in data:
+        out['title'] = data['title']
+    elif required:
+        raise PyCTFError("Title Required")
+    if "time_limit" in data:
+        out['time_limit'] = int(data['time_limit'])
+    elif required:
+        out['time_limit'] = 0
+    if "points" in data:
+        assert data['points'] >= 0
+        out["points"] = int(data['points'])
+    elif required:
+        out['points'] = 1
+
+    # Required one or other fields
+
+    if "question" in data:
+        out['question'] = data['question']
+    elif "question_script" in data:
+        out['question_script'] = data['question_script']
+    elif required:
+        raise PyCTFError("No question provided")
+
+    if "answer" in data:
+        out['answer'] = data['answer']
+    elif "answer_script" in data:
+        out['answer_script'] = data['answer_script']
+    elif required:
+        raise PyCTFError("No answer provided")
 
     # Optional fields
 
@@ -259,30 +294,13 @@ def add_question(data):
         assert isinstance(data['tags'], list)
         out['tags'] = data['tags']
 
-    # Required one or other fields
-
-    if "question" in data:
-        out['question'] = data['question']
-    elif "question_script" in data:
-        out['question_script'] = data['question_script']
-    else:
-        raise PyCTFError("No question provided")
-
-    if "answer" in data:
-        out['answer'] = data['answer']
-    elif "answer_script" in data:
-        out['answer_script'] = data['answer_script']
-    else:
-        raise PyCTFError("No answer provided")
-
     try:
         json.dumps(out)
     except ValueError as err:
         raise PyCTFError("Some value entered was not JSON Serializable:"
                          " {0}".format(str(err)))
 
-    questions[str(question_number)] = out
-    save_questions()
+    return out
 
 
 @app.route("/question/edit")
@@ -301,55 +319,12 @@ def rest_edit_question():
 def edit_question(data):
     global questions
 
-    out = dict()
-
     question_number = int(data['question_number'])
 
     if question_number not in questions:
         bottle.abort(400, "Question number already exists")
 
-    if "title" in data:
-        out['title'] = data['title']
-    if "time_limit" in data:
-        out['time_limit'] = int(data['time_limit'])
-    if "points" in data:
-        assert data['points'] >= 0
-        out["points"] = int(data['points'])
-
-    # Optional fields
-
-    if "answer_type" in data:
-        assert [x for x in ("boolean", "integer", "string", "list",
-                            "dictionary") if x == data['answer_type'].lower()]
-        out['answer_type'] = data['answer_type'].lower()
-    if "media" in data:
-        if not os.path.exists(os.path.join(custom_config['abs_media'],
-                                           data['media'])):
-            raise PyCTFError("Media specified does not exist in media folder")
-        out['media'] = data['media']
-    if "data" in data:
-        out['data'] = data['data']
-    if "tags" in data:
-        assert isinstance(data['tags'], list)
-        out['tags'] = data['tags']
-
-    # Required one or other fields
-
-    if "question" in data:
-        out['question'] = data['question']
-    elif "question_script" in data:
-        out['question_script'] = data['question_script']
-
-    if "answer" in data:
-        out['answer'] = data['answer']
-    elif "answer_script" in data:
-        out['answer_script'] = data['answer_script']
-
-    try:
-        json.dumps(out)
-    except ValueError as err:
-        raise PyCTFError("Some value entered was not JSON Serializable:"
-                         " {0}".format(str(err)))
+    out = process_common_question_fields(data)
 
     questions[str(question_number)].update(out)
     save_questions()
@@ -361,6 +336,8 @@ def rest_edit_question():
     check_auth(incoming_data.pop('auth_token'), role="admin")
     try:
         delete_question(incoming_data)
+    except KeyError:
+        bottle.abort(400, "Question does not exist")
     except PyCTFError as err:
         bottle.abort(400, str(err))
     return {}
@@ -369,7 +346,7 @@ def rest_edit_question():
 def delete_question(data):
     global questions
 
-    question_number = int(data['question_number'])
+    question_number = str(int(data['question_number']))
     del questions[question_number]
     save_questions()
 
