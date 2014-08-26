@@ -195,7 +195,6 @@ function set_question(question_number, ajax_data){
 		$("#submit_answer").val("Submit");
 		$("#submit_answer").off("click").click(answer_question);
 	}
-
 }
 
 function reset_question(){

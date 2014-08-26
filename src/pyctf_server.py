@@ -17,6 +17,8 @@ root = os.path.abspath(os.path.dirname(__file__))
 
 questions, config, scores = dict(), dict(), dict()
 auth, auth_tokens, limits = dict(), dict(), dict()
+match_file = os.path.join(root, "../data/match.json")
+
 
 app = bottle.Bottle()
 
@@ -157,6 +159,12 @@ def remove_user(user):
         save_state()
     save_auth()
 
+@app.route("/user/list")
+def get_users():
+    check_auth(bottle.request.json['auth_token'], role="admin")
+    return {"data": [(x, True if 'admin' in auth[x]['roles'] else False)
+                     for x in auth]}
+
 
 ############################## Challenges #####################################
 
@@ -204,6 +212,71 @@ def get_question(question_number):
                                        data else data['storage'])
     save_state()
     return out
+
+
+@app.route("/question/add")
+def rest_add_question():
+    incoming_data = bottle.request.json
+    check_auth(incoming_data.pop('auth_token'), role="admin")
+    try:
+        add_question(incoming_data)
+    except (KeyError, ValueError, AssertionError):
+        bottle.abort(400, "did not provide correct parameters")
+    except PyCTFError as err:
+        bottle.abort(400, str(err))
+
+    return {}
+
+
+def add_question(data):
+    global questions
+
+    title = data['title']
+    question_number = int(data['question_number'])
+    time_limit = 0 if 'time_limit' not in data else int(data['time_limit'])
+    points = 1 if 'points' not in data else int(data['points'])
+
+    if question_number in questions:
+        bottle.abort(400, "Question number already exists")
+
+    out = dict(time_limit=time_limit, title=title,  points=points)
+
+    # Optional fields
+
+    if "answer_type" in data:
+        out['answer_type'] = data['answer_type']
+    if "media" in data:
+        out['media'] = data['media']
+    if "data" in data:
+        out['data'] = data['data']
+    if "tags" in data:
+        assert isinstance(data['tags'], list)
+        out['tags'] = data['tags']
+
+    # Required one or other fields
+
+    if "question" in data:
+        out['question'] = data['question']
+    elif "question_script" in data:
+        out['question_script'] = data['question_script']
+    else:
+        raise PyCTFError("No question provided")
+
+    if "answer" in data:
+        out['answer'] = data['answer']
+    elif "answer_script" in data:
+        out['answer_script'] = data['answer_script']
+    else:
+        raise PyCTFError("No answer provided")
+
+    try:
+        json.dumps(out)
+    except ValueError as err:
+        raise PyCTFError("Some value entered was not JSON Serializable:"
+                         " {0}".format(str(err)))
+
+    questions[str(question_number)] = out
+    save_questions()
 
 
 @app.route("/answer/<question_number>", method="post")
@@ -348,6 +421,11 @@ def save_auth():
             json.dump(fp=f, obj=auth, indent=4)
 
 
+def save_questions():
+    with open(match_file, mode="w", encoding="utf-8") as f:
+        json.dump(fp=f, obj=dict(server=config, questions=questions), indent=4)
+
+
 def find_admins(users):
     return [user for user in users if 'admin' in users[user]['roles']]
 
@@ -432,19 +510,20 @@ def enable_ssl(key, cert, host, port):
 def get_user_arguments():
     import argparse
 
-    default_match = os.path.join(root, "../data/match.json")
-
     parser = argparse.ArgumentParser(description="PyCTF SERVER")
     parser.add_argument("-m", "--match", help="Path to JSON match file",
-                        default=default_match)
+                        default=match_file)
 
     return parser.parse_args()
+
 
 if __name__ == '__main__':
 
     args = get_user_arguments()
 
-    prepare_server(args.match)
+    match_file = args.match
+
+    prepare_server(match_file)
 
     server = 'wsgiref' if not config.get('ssl') else enable_ssl(
         key=config['ssl_key'], cert=config['ssl_cert'],
