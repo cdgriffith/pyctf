@@ -33,7 +33,7 @@ Field         | Type     | Description
 ------------- | -------- | ----------------
  question\*   | String   | The question generated for the user to provide a response to
  data         | Any      | Additional data the question can reference
- answer_type  | String   | Describe the type of response expected `integer`, `list`, `string` or `dictionary`
+ answer_type  | String   | Describe the type of response expected `boolean`, `integer`, `list`, `string` or `dictionary`
  storage      | Any      | Question specific information used to identify this question
  media        | String   | Name of additional media file in the `media` directory
  

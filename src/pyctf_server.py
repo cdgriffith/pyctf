@@ -15,9 +15,8 @@ logger.setLevel(logging.DEBUG)
 
 root = os.path.abspath(os.path.dirname(__file__))
 
-questions, config, scores = dict(), dict(), dict()
+questions, config, scores, custom_config = dict(), dict(), dict(), dict()
 auth, auth_tokens, limits = dict(), dict(), dict()
-match_file = os.path.join(root, "../data/match.json")
 
 
 app = bottle.Bottle()
@@ -159,6 +158,7 @@ def remove_user(user):
         save_state()
     save_auth()
 
+
 @app.route("/user/list")
 def get_users():
     check_auth(bottle.request.json['auth_token'], role="admin")
@@ -235,6 +235,7 @@ def add_question(data):
     question_number = int(data['question_number'])
     time_limit = 0 if 'time_limit' not in data else int(data['time_limit'])
     points = 1 if 'points' not in data else int(data['points'])
+    assert points >= 0
 
     if question_number in questions:
         bottle.abort(400, "Question number already exists")
@@ -244,8 +245,13 @@ def add_question(data):
     # Optional fields
 
     if "answer_type" in data:
-        out['answer_type'] = data['answer_type']
+        assert [x for x in ("boolean", "integer", "string", "list",
+                            "dictionary") if x == data['answer_type'].lower()]
+        out['answer_type'] = data['answer_type'].lower()
     if "media" in data:
+        if not os.path.exists(os.path.join(custom_config['abs_media'],
+                                           data['media'])):
+            raise PyCTFError("Media specified does not exist in media folder")
         out['media'] = data['media']
     if "data" in data:
         out['data'] = data['data']
@@ -276,6 +282,95 @@ def add_question(data):
                          " {0}".format(str(err)))
 
     questions[str(question_number)] = out
+    save_questions()
+
+
+@app.route("/question/edit")
+def rest_edit_question():
+    incoming_data = bottle.request.json
+    check_auth(incoming_data.pop('auth_token'), role="admin")
+    try:
+        edit_question(incoming_data)
+    except (KeyError, ValueError, AssertionError):
+        bottle.abort(400, "did not provide correct parameters")
+    except PyCTFError as err:
+        bottle.abort(400, str(err))
+    return {}
+
+
+def edit_question(data):
+    global questions
+
+    out = dict()
+
+    question_number = int(data['question_number'])
+
+    if question_number not in questions:
+        bottle.abort(400, "Question number already exists")
+
+    if "title" in data:
+        out['title'] = data['title']
+    if "time_limit" in data:
+        out['time_limit'] = int(data['time_limit'])
+    if "points" in data:
+        assert data['points'] >= 0
+        out["points"] = int(data['points'])
+
+    # Optional fields
+
+    if "answer_type" in data:
+        assert [x for x in ("boolean", "integer", "string", "list",
+                            "dictionary") if x == data['answer_type'].lower()]
+        out['answer_type'] = data['answer_type'].lower()
+    if "media" in data:
+        if not os.path.exists(os.path.join(custom_config['abs_media'],
+                                           data['media'])):
+            raise PyCTFError("Media specified does not exist in media folder")
+        out['media'] = data['media']
+    if "data" in data:
+        out['data'] = data['data']
+    if "tags" in data:
+        assert isinstance(data['tags'], list)
+        out['tags'] = data['tags']
+
+    # Required one or other fields
+
+    if "question" in data:
+        out['question'] = data['question']
+    elif "question_script" in data:
+        out['question_script'] = data['question_script']
+
+    if "answer" in data:
+        out['answer'] = data['answer']
+    elif "answer_script" in data:
+        out['answer_script'] = data['answer_script']
+
+    try:
+        json.dumps(out)
+    except ValueError as err:
+        raise PyCTFError("Some value entered was not JSON Serializable:"
+                         " {0}".format(str(err)))
+
+    questions[str(question_number)].update(out)
+    save_questions()
+
+
+@app.route("/question/delete")
+def rest_edit_question():
+    incoming_data = bottle.request.json
+    check_auth(incoming_data.pop('auth_token'), role="admin")
+    try:
+        delete_question(incoming_data)
+    except PyCTFError as err:
+        bottle.abort(400, str(err))
+    return {}
+
+
+def delete_question(data):
+    global questions
+
+    question_number = int(data['question_number'])
+    del questions[question_number]
     save_questions()
 
 
@@ -371,7 +466,7 @@ def recover_token():
 def run_process(command, stdin=None, timeout=15):
         p = Popen(command, shell=True, stdout=PIPE,
                   stderr=PIPE, stdin=PIPE,
-                  cwd=config['abs_script_directory'])
+                  cwd=custom_config['abs_script'])
 
         stdin = None if not stdin else stdin.encode("utf-8")
         stdout, stderr = p.communicate(input=stdin, timeout=timeout)
@@ -399,7 +494,7 @@ def update_score(user, question):
 @app.route("/media/<filename:path>")
 def media_file(filename):
     return bottle.static_file(filename=filename,
-                              root=config['abs_media_directory'])
+                              root=custom_config['abs_media'])
 
 
 @app.route("/server_info")
@@ -422,7 +517,7 @@ def save_auth():
 
 
 def save_questions():
-    with open(match_file, mode="w", encoding="utf-8") as f:
+    with open(custom_config['match_file'], mode="w", encoding="utf-8") as f:
         json.dump(fp=f, obj=dict(server=config, questions=questions), indent=4)
 
 
@@ -450,7 +545,7 @@ def verify_directories_exist():
 
 
 def prepare_server(match_file):
-    global questions, config, limits, auth, scores
+    global questions, config, limits, auth, scores, custom_config
 
     with open(match_file, encoding="utf-8") as f:
         content = json.load(f)
@@ -460,8 +555,9 @@ def prepare_server(match_file):
 
     script_dir, media_dir = verify_directories_exist()
 
-    config['abs_media_directory'] = media_dir
-    config['abs_script_directory'] = script_dir
+    custom_config['abs_media'] = media_dir
+    custom_config['abs_script'] = script_dir
+    custom_config['match_file'] = match_file
 
     os.chdir(os.path.join(root, config['working_directory']))
 
@@ -512,7 +608,7 @@ def get_user_arguments():
 
     parser = argparse.ArgumentParser(description="PyCTF SERVER")
     parser.add_argument("-m", "--match", help="Path to JSON match file",
-                        default=match_file)
+                        default=os.path.join(root, "../data/match.json"))
 
     return parser.parse_args()
 
@@ -521,9 +617,7 @@ if __name__ == '__main__':
 
     args = get_user_arguments()
 
-    match_file = args.match
-
-    prepare_server(match_file)
+    prepare_server(args.match)
 
     server = 'wsgiref' if not config.get('ssl') else enable_ssl(
         key=config['ssl_key'], cert=config['ssl_cert'],
