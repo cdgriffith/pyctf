@@ -441,8 +441,7 @@ def recover_token():
 
 
 def run_process(command, stdin=None, timeout=15):
-        p = Popen(command, shell=True, stdout=PIPE,
-                  stderr=PIPE, stdin=PIPE,
+        p = Popen(command, shell=True, stdout=PIPE, stderr=PIPE, stdin=PIPE,
                   cwd=custom_config['abs_script'])
 
         stdin = None if not stdin else stdin.encode("utf-8")

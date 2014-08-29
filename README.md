@@ -42,3 +42,13 @@ Access it by opening a web browser (currently tested with firefox) and pointing 
 > DO NOT use the provided SSL pem when running your own server,
 it is provided for demonstration / testing purposes only. 
 
+LEGAL
+-----
+
+MIT Licnence
+
+Developed by Chris Griffith - pyctf.com 
+
+
+
+An affiliate of penetrationtestersguide.com

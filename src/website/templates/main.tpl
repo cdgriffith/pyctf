@@ -24,6 +24,19 @@
         </div>
         <div id="content">
             <div id="leftcol">
+
+                <div id="admin_area">
+                    <h1>Admin Area</h1>
+                    <h3>Add Account</h3>
+                    <input type="text" name="new_user_name" />
+                    <input type="password" name="new_user_password" />
+                    <button>Add User</button>
+                    <h3>Delete Account</h3>
+
+
+
+                </div>
+
                 <div id="home_body">
                     <h1>Home</h1>
                     <div id="welcome_message"> </div>
@@ -75,12 +88,19 @@
                 </div>
 
                 <div id="userinfo" style="display:none">
+                    <div id="username"></div><div id="logout"><button id="logout_button">Logout</button></div>
                     <div id="user_message"></div>
                     <div id="user_score_area">Score: <span id="user_score">0</span></div>
-                    <div id="logout"><button id="logout_button">Logout</button></div>
+
+                   <!--- <button id="admin_button">Admin Area</button> --->
                 </div>
             </div>
         </div>
+
+        <div id="footer">
+            <div class="center_text">PyCTF - Created by Chris Griffith - Python Powered</span>
+        </div>
+
     </div>
 
     <script src="/static/js/jquery-2.1.1.min.js"></script>

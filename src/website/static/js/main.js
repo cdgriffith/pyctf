@@ -75,6 +75,14 @@ function go_home(){
 	change_page("#go_home", "#home_body", "home");
 
 }
+
+function go_admin_area(){
+	change_page("#go_home", "#admin_area", "admin");
+
+}
+
+
+
 function go_questions(){
 	change_page("#go_questions", "#question_list_body", "question");
 
@@ -274,7 +282,8 @@ function answer_question(){
 function show_user(username){
 			$("#login").hide();
 			$("#userinfo").show();
-			$("#user_message").html("<h3>" + username + "</h3>");
+			$("#username").html("<h3>" + username + "</h3>");
+            $("#admin_button").on("click").click(go_admin_area);
 			$("#logout_button").off("click").click(logout);
 			$("#submit_answer").off("click").click(answer_question);
 			$("#submit_answer").prop('disabled', false);
