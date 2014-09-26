@@ -45,10 +45,6 @@ it is provided for demonstration / testing purposes only.
 LEGAL
 -----
 
-MIT Licnence
+MIT Licence
 
-Developed by Chris Griffith - pyctf.com 
-
-
-
-An affiliate of penetrationtestersguide.com
+Developed by Chris Griffith - pyctf.com - christophergriffith.net
