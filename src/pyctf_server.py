@@ -97,7 +97,7 @@ def rest_change_password():
 
 
 def change_password(user, password, old_password):
-    if not user in auth:
+    if user not in auth:
         return False
     hashed = hash_pass(old_password)
     if hashed != auth[user]['password']:

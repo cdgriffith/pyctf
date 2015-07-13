@@ -20,6 +20,10 @@ config = dict()  # This will be populated when this module is imported
 def main_page():
     return {}
 
+@app.route("/new")
+@bottle.view("new")
+def new_page():
+    return {}
 
 @app.route("/static/<filename:path>")
 def static_file(filename):

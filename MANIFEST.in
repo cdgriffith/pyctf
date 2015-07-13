@@ -1,0 +1,1 @@
+recursive-include src *.py *.js *.css *.ttf *.svg *.eot *.woff *.tpl *.map
