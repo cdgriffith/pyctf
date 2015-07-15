@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title></title>
+    <title>{{get('title', "PyCTF")}}</title>
     <link rel="stylesheet" href="/static/css/bootstrap.css">
     <link rel="stylesheet" href="/static/css/bootstrap-theme.css">
     <link rel="stylesheet" href="/static/css/new.css">
@@ -23,26 +23,12 @@
             </div>
             <div id="navbar" class="collapse navbar-collapse">
               <ul class="nav navbar-nav">
-                <li class="active"><a href="#">Home</a></li>
-                <li><a href="#about">Questions</a></li>
-                <li><a href="#contact">Scoreboard</a></li>
+                <li class="active"><a href="/web/home">Home</a></li>
+                <li><a href="/web/questions">Questions</a></li>
+                <li><a href="/web/scoreboard">Scoreboard</a></li>
               </ul>
             </div><!--/.nav-collapse -->
           </div>
         </nav>
 
         <div class="container">
-
-          <div class="main-area">
-            <h1>PyCTF</h1>
-            <p class="lead"></p>
-          </div>
-
-        </div><!-- /.container -->
-
-
-
-        <script src="/static/js/jquery-2.1.1.min.js"></script>
-        <script src="/static/js/bootstrap.js"></script>
-    </body>
-</html>
