@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" ng-app="pyctfApp">
 <head>
     <meta charset="UTF-8">
     <title>{{get('title', "PyCTF")}}</title>
@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="/static/css/pyctf.css">
 </head>
     <body>
-
 
         <nav class="navbar navbar-inverse navbar-fixed-top">
           <div class="container">
@@ -31,4 +30,4 @@
           </div>
         </nav>
 
-        <div class="container" ng-controller="masterController">
+        <div class="container" ng-controller="masterController" style="padding-top: 40px">

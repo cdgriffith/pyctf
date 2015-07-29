@@ -1,7 +1,6 @@
 % include('header.tpl', questions="active")
 
         <div class="main-area" ng-controller="questionController">
-            <h1>PyCTF</h1>
             <!--
                         <div id="question_body">
                             <div id="question_breadcrumbs"><span id="bc_questions">Questions</span> > <span id="bc_question_number"></span> </div>
@@ -20,12 +19,14 @@
                             </table>
                         </div>
                         --->
-            <div>
-                <a ng-repeat="question in questionList">
-                    <span ng-bind="question"></span>
+            <div id="question-list">
+                <a class="list-group-item" ng-repeat="question in questionList | orderBy: number" ng-click="selectQuestion(question[0])">
+                    <span ng-bind="question.number"></span>: <span ng-bind="question.title"></span>
                 </a>
             </div>
-            {{'{{bound.test}}'}}
+
+
+
         </div>
 
 % include('footer.tpl')
