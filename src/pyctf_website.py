@@ -20,18 +20,27 @@ config = dict()  # This will be populated when this module is imported
 def main_page():
     return {}
 
+
 @app.route("/web/home")
 @bottle.view("home")
 def new_page():
     return {}
+
 
 @app.route("/web/questions")
 @bottle.view("questions")
 def new_page():
     return {}
 
+
 @app.route("/web/scoreboard")
 @bottle.view("scoreboard")
+def new_page():
+    return {}
+
+
+@app.route("/web/login")
+@bottle.view("login")
 def new_page():
     return {}
 

@@ -5,7 +5,7 @@
     <title>{{get('title', "PyCTF")}}</title>
     <link rel="stylesheet" href="/static/css/bootstrap.css">
     <link rel="stylesheet" href="/static/css/bootstrap-theme.css">
-    <link rel="stylesheet" href="/static/css/new.css">
+    <link rel="stylesheet" href="/static/css/pyctf.css">
 </head>
     <body>
 
@@ -22,13 +22,13 @@
               <a class="navbar-brand" href="#">PyCTF</a>
             </div>
             <div id="navbar" class="collapse navbar-collapse">
-              <ul class="nav navbar-nav">
-                <li class="active"><a href="/web/home">Home</a></li>
-                <li><a href="/web/questions">Questions</a></li>
-                <li><a href="/web/scoreboard">Scoreboard</a></li>
+              <ul id="navbar-items" class="nav navbar-nav">
+                <li class="{{get('home', '')}}"><a href="/web/home">Home</a></li>
+                <li class="{{get('questions', '')}}"><a href="/web/questions">Questions</a></li>
+                <li class="{{get('scoreboard', '')}}"><a href="/web/scoreboard">Scoreboard</a></li>
               </ul>
             </div><!--/.nav-collapse -->
           </div>
         </nav>
 
-        <div class="container">
+        <div class="container" ng-controller="masterController">
