@@ -24,7 +24,27 @@ pyctfApp.controller('questionController', ['$scope', '$http', function($scope, $
             alert("Could not load questions!");
         });
 
+    $scope.currentQuestion = {
+        answer_type: "",
+        token: "",
+        title: "",
+        question: "",
+        time_limit: 0,
+        media: null,
+        data: null
+    };
+
     $scope.selectQuestion = function(question_number){
+        $("#question-body").show();
+        $("#question-list").hide();
+        $http.get("/question/"+ question_number)
+            .success(function(response){
+                $scope.currentQuestion = angular.copy(response);
+
+            }).error(function(response){
+                alert("Could not load question");
+            });
+
 
 
     };

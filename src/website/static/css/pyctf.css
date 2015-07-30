@@ -1,29 +1,68 @@
 html {
-  height: 100%;
-  width: 100%;
-  overflow: hidden;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
 }
 
 body {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
 }
 
 
 .main-area {
-  padding: 40px 15px;
-  text-align: center;
+    padding: 40px 15px;
+    text-align: center;
 }
 
 .login-box {
-  width: 100%;
-  height: 220px;
-  background: #222222;
-  padding:20px;
-  margin-top: -220px;
+    width: 100%;
+    height: 220px;
+    background: #222222;
+    padding:20px;
+    margin-top: -220px;
 }
 
 .white-text {
-  color: #ffffff;
+    color: #ffffff;
+}
+
+.title {
+    text-align: left;
+    font-size: 18px;
+    font-weight: bold;
+    margin-left: 0;
+    padding-left: 0;
+    padding-bottom: 20px;
+}
+
+.filter-box {
+    text-align: right;
+    margin-left: auto;
+    margin-right: 0;
+    padding-right: 0;
+}
+
+.left-align {
+    text-align: left;
+}
+
+#question-body {
+    display: none;
+}
+
+#question-body .row {
+    padding-top: 5px;
+    padding-bottom: 5px;
+
+}
+
+#question-body .col-md-1 {
+    text-align: left;
+    font-size: 14px;
+    font-weight: bold;
+    margin-left: 0;
+    padding-left: 0;
+
 }
