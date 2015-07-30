@@ -38,7 +38,7 @@
                 <div class="row">
                     <form>
                         <div class="form-group">
-                            <label for="answer-box">Answer</label><textarea class="form-control" id="answer-box"></textarea>
+                            <label for="answer-box">Answer: </label><textarea class="form-control" id="answer-box"></textarea>
                         </div>
                         <button id="submit-answer" class="btn-primary">Submit</button>
                     </form>

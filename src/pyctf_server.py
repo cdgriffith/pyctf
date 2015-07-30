@@ -40,7 +40,7 @@ def rest_login():
                 "timeout": config['auth_time_limit']}
     except Exception as err:
         logger.exception(str(err))
-        bottle.redirect("/login", code=403)
+        bottle.abort(403, "Incorrect login")
 
 
 def login(user, password):
@@ -67,13 +67,13 @@ def hash_pass(password):
 
 def check_auth(token, role="user"):
     if token not in auth_tokens:
-        bottle.redirect("/login", code=403)
+        bottle.abort(403, "Not authorized to view this area")
 
     if auth_tokens[token]['timeout'] > time.time():
         auth_tokens[token]['timeout'] = (time.time() +
                                          config['auth_time_limit'])
     else:
-        bottle.redirect("/login", code=403)
+        bottle.abort(403, "Not authorized to view this area")
     if role not in auth_tokens[token]['roles']:
         bottle.abort(403, "Not authorized to view this area")
 
