@@ -15,7 +15,8 @@
 
             <div id="question-body" class="left-align">
                 <div class="row">
-                    <div class="title col-md-12" ng-bind="currentQuestion.title"></div>
+                    <div class="title col-md-10" ng-bind="currentQuestion.title"></div>
+                    <div class="col-md-2 pull-right"><button class="btn btn-success pull-right" ng-click="backToList()">Back to Questions</button> </div>
                 </div>
                 <div class="row">
                     <div class="col-md-1">Question: </div>
@@ -27,7 +28,7 @@
                 </div>
                 <div class="row" ng-hide="! currentQuestion.media">
                     <div class="col-md-1">Media: </div>
-                    <div class="col-md-11"> <a href="{{'{{currentQuestion.media}}'}}" target="_blank" >Download</a></div>
+                    <div class="col-md-11"> <a class="btn btn-success" href="{{'{{currentQuestion.media}}'}}" target="_blank" >Download</a></div>
                 </div>
                 <div class="row"  ng-hide="currentQuestion.time_limit == 0">
                     <div class="col-md-1">Time Limit: </div>
@@ -37,9 +38,10 @@
                 <div class="row">
                     <form ng-submit="answerQuestion()">
                         <div class="form-group">
-                            <label for="answer-box">Answer: </label><textarea ng-model="answer" class="form-control" id="answer-box"></textarea>
+                           <div class="col-md-1"> <label for="answer-box">Answer: </label></div>
+                            <div class="col-md-11"> <textarea ng-model="answer" class="form-control" id="answer-box"></textarea></div>
                         </div>
-                        <input type="submit" id="submit-answer" class="btn btn-primary" />
+                        <div class="col-md-1 pull-right"><input type="submit" id="submit-answer" class="btn btn-primary pull-right" /></div>
                     </form>
                 </div>
 

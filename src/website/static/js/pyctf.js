@@ -8,7 +8,7 @@ function endsWith(str, suffix) {
 
 var pyctfApp = angular.module('pyctfApp', ['ngCookies']);
 
-pyctfApp.controller('masterController', ['$scope', '$http', '$cookies', '$window', '$location', function($scope, $http, $cookies, $window, $location){
+pyctfApp.controller('masterController', ['$scope', '$http', '$cookies', '$window', function($scope, $http, $cookies, $window){
     $scope.bound = {auth: $cookies.get('pyctf.auth'),
                     location: "",
                     page_ready: false,
@@ -57,7 +57,7 @@ pyctfApp.controller('masterController', ['$scope', '$http', '$cookies', '$window
 }]);
 
 
-pyctfApp.controller('questionController', ['$scope', '$http', '$location', function($scope, $http, $location){
+pyctfApp.controller('questionController', ['$scope', '$http', function($scope, $http){
     $scope.questionList = [];
 
     $scope.$watch('bound.page_ready', function(value) {
@@ -100,6 +100,14 @@ pyctfApp.controller('questionController', ['$scope', '$http', '$location', funct
             });
     };
 
+    $scope.backToList = function(){
+        $("#question-body").hide();
+        $("#question-list").show();
+        $scope.answer = "";
+        $http.post("/recover_token", {token: $scope.currentQuestion.token}).error(function(){
+            console.log("Could not recover token!");
+        });
+    };
 
     $scope.answerQuestion = function(){
 
@@ -194,7 +202,7 @@ pyctfApp.controller('loginController', ['$scope', '$http', '$cookies', function(
 
 }]);
 
-pyctfApp.controller('scoreController', ['$scope', '$http', '$location', function($scope, $http, $location){
+pyctfApp.controller('scoreController', ['$scope', '$http', function($scope, $http){
     $scope.scoreList = [];
 
     $scope.$watch('bound.page_ready', function(value) {
@@ -217,11 +225,5 @@ pyctfApp.controller('scoreController', ['$scope', '$http', '$location', function
 
 
 $( document ).ready(function() {
-  /*  $('#navbar-items li').click(function(e) {
-      var $this = $(this);
-      $this.siblings().removeClass('active');
-      if (!$this.hasClass('active')) {
-        $this.addClass('active');
-      }
-    }); */
+
 });
