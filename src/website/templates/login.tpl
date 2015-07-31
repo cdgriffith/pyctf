@@ -14,7 +14,9 @@
                             <label class="white-text" for="login-password">Password </label>
                             <input ng-model="password" id="login-password" class="form-control" type="password" name="password" placeholder="Password" />
                         </div>
-                            <input type="submit" id="login-button" type="button" name="login" value="Login" class="btn btn-default">Log in</input>
+                        <div class="col-sm-3 col-md-3 pull-right">
+                            <input type="submit" id="login-button" type="button" name="login" value="Login" class="btn btn-primary">Log in</input>
+                            </div>
                     </form>
                 </div>
             </div>

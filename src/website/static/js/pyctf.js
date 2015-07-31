@@ -11,17 +11,22 @@ var pyctfApp = angular.module('pyctfApp', ['ngCookies']);
 pyctfApp.controller('masterController', ['$scope', '$http', '$cookies', '$window', '$location', function($scope, $http, $cookies, $window, $location){
     $scope.bound = {auth: $cookies.get('pyctf.auth'),
                     location: "",
-                    page_ready: false};
+                    page_ready: false,
+                    logged_in: false};
 
     $scope.bound.message = function (message){
         alert(message);
     };
 
     $scope.bound.error = function(message){
-        alsert(error);
+        alert(message);
     };
 
-    //console.log($window.location.href);
+    $scope.logout = function(){
+        $cookies.put('pyctf.auth', null);
+        $scope.bound.logged_in = false;
+        document.location = "/web/login";
+    };
 
     if ($scope.bound.auth == null){
         if (endsWith($window.location.href, "/web/login") == 0) {
@@ -33,12 +38,14 @@ pyctfApp.controller('masterController', ['$scope', '$http', '$cookies', '$window
     } else {
         $http.post("/user/auth_refresh", {auth_token: $scope.bound.auth})
             .success(function(response){
+                $scope.bound.logged_in = true;
                 if (endsWith($window.location.href, "/web/login") == 0) {
                     $scope.bound.page_ready = true;
                 } else {
                     document.location = "/web/home";
                 }
             }).error(function(response){
+                $scope.bound.logged_in = false;
                 if (endsWith($window.location.href, "/web/login") == 0) {
                     document.location = "/web/login";
                 } else {
@@ -122,6 +129,8 @@ pyctfApp.controller('questionController', ['$scope', '$http', '$location', funct
             } catch(err){
                 $scope.bound.error("Must be a valid JSON string, error: "+ err.message)
             }
+        } else {
+            answer = $scope.answer;
         }
 
         var data = {auth_token: $scope.bound.auth,
@@ -131,12 +140,13 @@ pyctfApp.controller('questionController', ['$scope', '$http', '$location', funct
         $http.post("/answer/"+ $scope.currentQuestion.number, data)
             .success(function(response){
                 if (response.correct == true){
-                    alert("Congrats, correct answer!")
+                    alert("Congrats, correct answer!");
+                    $("#question-body").hide();
+                    $("#question-list").show();
                 } else {
-                    alert("wrong!")
+                    alert("wrong!");
                 }
             }).error(function(response){});
-
     }
 
 }]);
