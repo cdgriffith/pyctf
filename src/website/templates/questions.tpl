@@ -36,11 +36,11 @@
                 </div>
 
                 <div class="row">
-                    <form>
+                    <form ng-submit="answerQuestion()">
                         <div class="form-group">
-                            <label for="answer-box">Answer: </label><textarea class="form-control" id="answer-box"></textarea>
+                            <label for="answer-box">Answer: </label><textarea ng-model="answer" class="form-control" id="answer-box"></textarea>
                         </div>
-                        <button id="submit-answer" class="btn-primary">Submit</button>
+                        <input type="submit" id="submit-answer" class="btn-primary" />
                     </form>
                 </div>
 

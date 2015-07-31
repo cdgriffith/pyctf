@@ -25,7 +25,7 @@
             "question": "what is 1 + 1?",
             "answer": 2,
             "time_limit": 0,
-            "answer_type": "int"
+            "answer_type": "integer"
         },
         "2": {
             "title": "Script generated question and answer",

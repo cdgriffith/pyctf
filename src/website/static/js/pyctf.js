@@ -13,6 +13,14 @@ pyctfApp.controller('masterController', ['$scope', '$http', '$cookies', '$window
                     location: "",
                     page_ready: false};
 
+    $scope.bound.message = function (message){
+        alert(message);
+    };
+
+    $scope.bound.error = function(message){
+        alsert(error);
+    };
+
     //console.log($window.location.href);
 
     if ($scope.bound.auth == null){
@@ -68,7 +76,8 @@ pyctfApp.controller('questionController', ['$scope', '$http', '$location', funct
         question: "",
         time_limit: 0,
         media: null,
-        data: null
+        data: null,
+        number: 0
     };
 
     $scope.selectQuestion = function(question_number){
@@ -77,12 +86,58 @@ pyctfApp.controller('questionController', ['$scope', '$http', '$location', funct
         $http.get("/question/"+ question_number)
             .success(function(response){
                 $scope.currentQuestion = angular.copy(response);
+                $scope.currentQuestion.number = question_number;
 
             }).error(function(response){
                 alert("Could not load question");
             });
-
     };
+
+
+    $scope.answerQuestion = function(){
+
+        var answer;
+        if ($scope.currentQuestion.answer_type == "integer"){
+            try {
+                answer = parseInt($scope.answer);
+            } catch(err){
+                $scope.bound.error("Could not parse answer to integer");
+            }
+        } else if ($scope.currentQuestion.answer_type == "string"){
+            answer = $scope.answer;
+        } else if ($scope.currentQuestion.answer_type == "boolean"){
+            if ($scope.answer.toLowerCase() == "true"){
+                answer = true;
+            } else if ($scope.answer.toLowerCase() == "false"){
+                answer = false;
+            }
+            else {
+                $scope.bound.error("Must be either 'true' or 'false'");
+            }
+        } else if ($scope.currentQuestion.answer_type == "list"){
+            answer = $scope.answer.split(",");
+        } else if ($scope.currentQuestion.answer_type == "dictionary"){
+            try {
+                answer = JSON.parse($scope.answer);
+            } catch(err){
+                $scope.bound.error("Must be a valid JSON string, error: "+ err.message)
+            }
+        }
+
+        var data = {auth_token: $scope.bound.auth,
+                    token: $scope.currentQuestion.token,
+                    answer: answer};
+
+        $http.post("/answer/"+ $scope.currentQuestion.number, data)
+            .success(function(response){
+                if (response.correct == true){
+                    alert("Congrats, correct answer!")
+                } else {
+                    alert("wrong!")
+                }
+            }).error(function(response){});
+
+    }
 
 }]);
 
@@ -109,6 +164,11 @@ pyctfApp.controller('loginController', ['$scope', '$http', '$cookies', function(
     });
 
     $scope.login = function(){
+        if ($scope.user == null || $scope.password == null){
+            alert("Please enter username and password");
+            return false;
+        }
+
          $http.post('/login', {user: $scope.user, password: $scope.password})
              .success(function(response){
                  $scope.bound.auth = response.auth_token;
@@ -121,6 +181,26 @@ pyctfApp.controller('loginController', ['$scope', '$http', '$cookies', function(
     };
 
 
+
+}]);
+
+pyctfApp.controller('scoreController', ['$scope', '$http', '$location', function($scope, $http, $location){
+    $scope.scoreList = [];
+
+    $scope.$watch('bound.page_ready', function(value) {
+        if (value == true) {
+            $(".main-area").show();
+            $http.get("/scoreboard/list")
+                .success(function (response) {
+                    angular.forEach(response.data, function (value, key) {
+                        $scope.scoreList.push({score: value[1], name: value[0]});
+                    });
+                })
+                .error(function (response) {
+                    alert("Could not load scores!");
+                });
+        }
+    });
 
 }]);
 
