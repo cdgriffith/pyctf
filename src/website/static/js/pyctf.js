@@ -6,7 +6,7 @@ function endsWith(str, suffix) {
     return str.indexOf(suffix, str.length - suffix.length) !== -1;
 }
 
-var pyctfApp = angular.module('pyctfApp', ['ngCookies']);
+var pyctfApp = angular.module('pyctfApp', ['ngCookies', 'ngSanitize']);
 
 pyctfApp.controller('masterController', ['$scope', '$http', '$cookies', '$window', function($scope, $http, $cookies, $window){
     $scope.bound = {auth: $cookies.get('pyctf.auth'),
@@ -163,10 +163,18 @@ pyctfApp.controller('questionController', ['$scope', '$http', function($scope, $
 
 pyctfApp.controller('homeController', ['$scope', '$http', function($scope, $http){
 
+    $scope.welcomeMessage = "<h3> Welcome to PyCTF!</h3>" +
+        "<p> This is the default welcome screen, please feel free to customize it!</p>";
+
     $scope.$watch('bound.page_ready', function(value) {
         if (value == true) {
             $(".main-area").show();
+        $http.get("/server_info").success(function(response){
+            $scope.welcomeMessage = response.welcome_message;
+        });
         }
+
+
     });
 
 }]);

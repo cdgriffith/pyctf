@@ -16,11 +16,6 @@ config = dict()  # This will be populated when this module is imported
 
 
 @app.route("/")
-@bottle.view("main")
-def main_page():
-    return {}
-
-
 @app.route("/web/home")
 @bottle.view("home")
 def new_page():
