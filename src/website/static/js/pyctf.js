@@ -88,15 +88,15 @@ pyctfApp.controller('questionController', ['$scope', '$http', function($scope, $
     };
 
     $scope.selectQuestion = function(question_number){
-        $("#question-body").show();
         $("#question-list").hide();
         $http.get("/question/"+ question_number)
             .success(function(response){
                 $scope.currentQuestion = angular.copy(response);
                 $scope.currentQuestion.number = question_number;
-
+                $("#question-body").show();
             }).error(function(response){
                 alert("Could not load question");
+                $scope.backToList();
             });
     };
 
@@ -151,6 +151,7 @@ pyctfApp.controller('questionController', ['$scope', '$http', function($scope, $
                     alert("Congrats, correct answer!");
                     $("#question-body").hide();
                     $("#question-list").show();
+                    $scope.answer = "";
                 } else {
                     alert("wrong!");
                 }

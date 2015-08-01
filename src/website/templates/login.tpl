@@ -15,7 +15,7 @@
                             <input ng-model="password" id="login-password" class="form-control" type="password" name="password" placeholder="Password" />
                         </div>
                         <div class="col-sm-3 col-md-3 pull-right">
-                            <input type="submit" id="login-button" type="button" name="login" value="Login" class="btn btn-primary">Log in</input>
+                            <input type="submit" id="login-button" type="button" name="login" value="Login" class="btn btn-primary" />
                             </div>
                     </form>
                 </div>
