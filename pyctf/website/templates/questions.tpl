@@ -5,18 +5,22 @@
                 <div class="row">
                     <div class="col-md-6 title">Questions</div>   <div class="col-md-6 filter-box"><form class="form-inline"><input ng-model="questionListFilter" type="text" placeholder="Filter by" autofocus></form></div>
                 </div>
-
-                <div class="row">
-                    <a class="list-group-item left-align" ng-repeat="question in questionList | filter:questionListFilter | orderBy: 'number'" ng-click="selectQuestion(question.number)">
-                        <span ng-bind="question.number"></span>: <span ng-bind="question.title"></span>
-                    </a>
+                <div id="title_row" class="row">
+                    <div class="col-md-2 left-align" style="cursor: pointer" ng-click="updateSort('number')"><b>Number</b> <div ng-class="{'glyphicon-triangle-bottom': questionListOrder=='number' && ! questionListOrderReverse, 'glyphicon-triangle-top': questionListOrder=='number' && questionListOrderReverse}" class="glyphicon"></div></div>
+                    <div class="col-md-3" style="cursor: pointer" ng-click="updateSort('title')"><b>Title</b><div ng-class="{'glyphicon-triangle-bottom': questionListOrder=='title' && ! questionListOrderReverse, 'glyphicon-triangle-top': questionListOrder=='title' && questionListOrderReverse}" class="glyphicon"></div></div>
+                    <div class="col-md-2 pull-right" style="cursor: pointer" ng-click="updateSort('points')"><b>Points</b><div ng-class="{'glyphicon-triangle-bottom': questionListOrder=='points' && ! questionListOrderReverse, 'glyphicon-triangle-top': questionListOrder=='points' && questionListOrderReverse}" class="glyphicon"></div></div>
+                </div>
+                <div class="row list-group-item" style="cursor: pointer" ng-repeat="question in questionList | filter:questionListFilter | orderBy: questionListOrder: questionListOrderReverse" ng-click="selectQuestion(question.number)">
+                    <div class="col-md-2 left-align" ng-bind="question.number"></div>
+                    <div class="col-md-3 left-align" ng-bind="question.title"></div>
+                    <div class="col-md-2 pull-right" ng-bind="question.points"></div>
                 </div>
             </div>
 
             <div id="question-body" class="left-align">
                 <div class="row">
                     <div class="title col-md-10" ng-bind="currentQuestion.title"></div>
-                    <div class="col-md-2 pull-right"><button class="btn btn-success pull-right" ng-click="backToList()">Back to Questions</button> </div>
+                    <div class="col-md-2 pull-right"><button class="btn btn-default pull-right" ng-click="backToList()">Back to Questions</button> </div>
                 </div>
                 <div class="row">
                     <div class="col-md-1">Question: </div>

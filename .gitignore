@@ -55,3 +55,4 @@ docs/_build/
 .idea
 
 data/state.json
+venv/

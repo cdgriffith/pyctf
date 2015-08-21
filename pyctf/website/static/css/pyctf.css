@@ -67,3 +67,10 @@ body {
     padding-left: 0;
 
 }
+
+.sep {
+    padding: 8px;
+    margin-top:5px;
+    border-bottom: 1px solid #DDD;
+    vertical-align: middle;
+}

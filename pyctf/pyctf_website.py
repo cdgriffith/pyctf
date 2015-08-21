@@ -40,6 +40,12 @@ def new_page():
     return {}
 
 
+@app.route("/web/admin")
+@bottle.view("admin")
+def new_page():
+    return {}
+
+
 @app.route("/static/<filename:path>")
 def static_file(filename):
     return bottle.static_file(filename=filename,

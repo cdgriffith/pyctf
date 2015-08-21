@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 import bottle
 import json
 import uuid
@@ -37,7 +37,8 @@ def rest_login():
     password = incoming_data['password']
     try:
         return {"auth_token": login(user, password),
-                "timeout": config['auth_time_limit']}
+                "timeout": config['auth_time_limit'],
+                "roles": auth[user]['roles']}
     except Exception as err:
         logger.exception(str(err))
         bottle.abort(403, "Incorrect login")
@@ -82,8 +83,8 @@ def check_auth(token, role="user"):
 
 @app.route("/user/auth_refresh", method="post")
 def rest_auth_refresh():
-    check_auth(bottle.request.json['auth_token'])
-    return {"refresh": True}
+    user = check_auth(bottle.request.json['auth_token'])
+    return {"refresh": True, "user": user, "roles": auth[user]["roles"]}
 
 
 @app.route("/user/change_password", method="post")
@@ -123,6 +124,9 @@ def rest_add_user():
     user = incoming_data['user']
     password = incoming_data['password']
     admin = incoming_data.get('admin', False)
+    if user in auth:
+        return bottle.abort(409, "User already exists")
+
     try:
         add_user(user, password, admin)
     except Exception as err:
@@ -159,12 +163,21 @@ def remove_user(user):
     save_auth()
 
 
-@app.route("/user/list")
+@app.route("/user/list", method="POST")
 def get_users():
     check_auth(bottle.request.json['auth_token'], role="admin")
     return {"data": [(x, True if 'admin' in auth[x]['roles'] else False)
                      for x in auth]}
 
+
+@app.route("/user/details/<name>", method="POST")
+def user_details(name):
+    current_user = check_auth(bottle.request.json['auth_token'], role="user")
+    if current_user != name:
+        check_auth(bottle.request.json['auth_token'], role="admin")
+    if name not in auth:
+        return bottle.abort(404, "User not found")
+    return auth[name]
 
 ############################## Challenges #####################################
 
@@ -178,7 +191,7 @@ def list_questions():
 @app.route("/questions/list")
 def list_questions():
     return {"data":
-            [[k, v.get('title'), ", ".join(v.get('tags', []))]
+            [[k, v.get('title'), v.get('points', 1), ", ".join(v.get('tags', []))]
              for k, v in questions.items()]}
 
 
@@ -558,7 +571,10 @@ def prepare_server(match_file):
 
 def enable_ssl(key, cert, host, port):
     from cherrypy.wsgiserver.ssl_builtin import BuiltinSSLAdapter
-    from cherrypy.wsgiserver.wsgiserver3 import CherryPyWSGIServer
+    try:
+        from cherrypy.wsgiserver.wsgiserver3 import CherryPyWSGIServer
+    except ImportError:
+        from cherrypy.wsgiserver.wsgiserver2 import CherryPyWSGIServer
 
     class SSLServer(bottle.ServerAdapter):
 
@@ -589,19 +605,23 @@ def get_user_arguments():
     return parser.parse_args()
 
 
-if __name__ == '__main__':
-
+def main():
     args = get_user_arguments()
 
     prepare_server(args.match)
 
-    server = 'wsgiref' if not config.get('ssl') else enable_ssl(
+    server = 'cherrypy' if not config.get('ssl') else enable_ssl(
         key=config['ssl_key'], cert=config['ssl_cert'],
         host=config['host'], port=config['port'])
 
     if config['website']:
-        import pyctf_website
+        from pyctf import pyctf_website
         pyctf_website.config = config
         app.merge(pyctf_website.app.routes)
 
     bottle.run(app, host=config['host'], port=config['port'], server=server)
+
+
+if __name__ == '__main__':
+    main()
+

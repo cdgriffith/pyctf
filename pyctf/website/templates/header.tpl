@@ -25,10 +25,20 @@
                 <li class="{{get('home', '')}}"><a href="/web/home">Home</a></li>
                 <li class="{{get('questions', '')}}"><a href="/web/questions">Questions</a></li>
                 <li class="{{get('scoreboard', '')}}"><a href="/web/scoreboard">Scoreboard</a></li>
+                <li ng-hide="bound.roles.indexOf('admin') == -1" class="{{get('admin', '')}}"><a href="/web/admin">Admin</a></li>
               </ul>
-                <div class="col-sm-1 col-md-1 pull-right">
+
+
+              <div class="col-sm-1 col-md-1 pull-right">
                     <button class="btn btn-danger" ng-click="logout()" ng-hide="! bound.logged_in || ! bound.page_ready">Logout</button>
-                </div>
+              </div>
+
+              <div ng-hide="! bound.logged_in || ! bound.page_ready" class="col-md-2 pull-right">
+                <span class="glyphicon glyphicon-user" style="color: white">
+                Hello, {{'{{bound.user}}'}}!
+              </div>
+
+
             </div><!--/.nav-collapse -->
           </div>
         </nav>

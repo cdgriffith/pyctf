@@ -12,7 +12,9 @@ pyctfApp.controller('masterController', ['$scope', '$http', '$cookies', '$window
     $scope.bound = {auth: $cookies.get('pyctf.auth'),
                     location: "",
                     page_ready: false,
-                    logged_in: false};
+                    logged_in: false,
+                    user: "",
+                    roles: []};
 
     $scope.bound.message = function (message){
         alert(message);
@@ -25,6 +27,7 @@ pyctfApp.controller('masterController', ['$scope', '$http', '$cookies', '$window
     $scope.logout = function(){
         $cookies.put('pyctf.auth', null);
         $scope.bound.logged_in = false;
+        $scope.bound.user = "";
         document.location = "/web/login";
     };
 
@@ -39,6 +42,8 @@ pyctfApp.controller('masterController', ['$scope', '$http', '$cookies', '$window
         $http.post("/user/auth_refresh", {auth_token: $scope.bound.auth})
             .success(function(response){
                 $scope.bound.logged_in = true;
+                $scope.bound.user = response.user;
+                $scope.bound.roles = response.roles;
                 if (endsWith($window.location.href, "/web/login") == 0) {
                     $scope.bound.page_ready = true;
                 } else {
@@ -46,6 +51,8 @@ pyctfApp.controller('masterController', ['$scope', '$http', '$cookies', '$window
                 }
             }).error(function(response){
                 $scope.bound.logged_in = false;
+                $scope.bound.user = "";
+                $scope.bound.roles = [];
                 if (endsWith($window.location.href, "/web/login") == 0) {
                     document.location = "/web/login";
                 } else {
@@ -61,12 +68,16 @@ pyctfApp.controller('questionController', ['$scope', '$http', function($scope, $
     $scope.questionList = [];
 
     $scope.$watch('bound.page_ready', function(value) {
+        console.log($scope.bound);
         if (value == true) {
             $(".main-area").show();
             $http.get("/questions/list")
                 .success(function (response) {
                     angular.forEach(response.data, function (value, key) {
-                        $scope.questionList.push({number: value[0], title: value[1], tags: value[2]});
+                        $scope.questionList.push({number: value[0],
+                                                  title: value[1],
+                                                  points: value[2],
+                                                  tags: value[3]});
                     });
                 })
                 .error(function (response) {
@@ -108,6 +119,19 @@ pyctfApp.controller('questionController', ['$scope', '$http', function($scope, $
             console.log("Could not recover token!");
         });
     };
+
+    $scope.questionListOrder = 'number';
+    $scope.questionListOrderReverse = false;
+
+    $scope.updateSort = function(field){
+        if ($scope.questionListOrder == field) {
+            $scope.questionListOrderReverse = ! $scope.questionListOrderReverse;
+        } else {
+            $scope.questionListOrderReverse = false;
+            $scope.questionListOrder = field;
+        };
+    };
+
 
     $scope.answerQuestion = function(){
 
@@ -200,6 +224,8 @@ pyctfApp.controller('loginController', ['$scope', '$http', '$cookies', function(
              .success(function(response){
                  $scope.bound.auth = response.auth_token;
                  $scope.bound.auth_timeout = response.timeout;
+                 $scope.bound.user = $scope.user;
+                 $scope.bound.roles = response.roles;
                  $cookies.put("pyctf.auth", response.auth_token);
                  document.location = "/web/home";
              }).error(function(response){
@@ -232,7 +258,66 @@ pyctfApp.controller('scoreController', ['$scope', '$http', function($scope, $htt
 }]);
 
 
+pyctfApp.controller('adminController', ['$scope', '$http', function($scope, $http){
 
-$( document ).ready(function() {
+    $scope.userNames = [];
 
-});
+    $scope.$watch('bound.page_ready', function(value) {
+        if (value == true) {
+            $(".main-area").show();
+
+            if ($scope.bound.roles.indexOf('admin') == -1){
+                   document.location = "/web/home";
+            } else {
+                $http.post("/user/list", {auth_token: $scope.bound.auth})
+                    .success(function(response){
+                         angular.forEach(response.data, function (value) {
+                             $scope.userNames.push({user: value[0], admin: value[1]});
+                         });
+                    });
+            }
+
+        }
+    });
+
+    $scope.addUser = function(){
+        if ($scope.newUser == null || $scope.newPass == null){
+            alert("Please enter username and password");
+            return false;
+        }
+
+        var data = {user: $scope.newUser,
+                    password: $scope.newPass,
+                    auth_token: $scope.bound.auth,
+                    admin: $scope.newAdmin};
+
+            $http.post('/user/add', data)
+             .success(function(response){
+                 alert("User added");
+                 document.location = "/web/admin";
+             }).error(function(response){
+                alert("Invalid Credentials");
+             });
+    };
+
+    $scope.removeUser = function(){
+        if(! $scope.userToRemove){
+            alert("Must select a user!");
+            return false;
+        }
+
+        var data = {user: $scope.userToRemove,
+                    auth_token: $scope.bound.auth};
+
+            $http.post('/user/remove', data)
+             .success(function(response){
+                 alert("User deleted");
+                 document.location = "/web/admin";
+             }).error(function(response){
+                alert("Invalid Credentials");
+             });
+    };
+
+
+
+}]);
