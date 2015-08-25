@@ -26,6 +26,39 @@ class PyCTFError(Exception):
     pass
 
 
+def json_error(message, verbose=False):
+    data = {"error": message.body}
+
+    if verbose:
+        data["exception"] = message.exception
+        data["traceback"] = message.traceback
+
+    return bottle.HTTPResponse(
+        body=json.dumps(data),
+        status=message.status,
+        headers={"Content-Type": "application/json"})
+
+
+@app.error(403)
+def error_403(message):
+    return json_error(message)
+
+
+@app.error(409)
+def error_409(message):
+    return json_error(message)
+
+
+@app.error(500)
+def error_500(message):
+    return json_error(message, verbose=True)
+
+
+@app.route("/test_error/<code>")
+def test_error(code):
+    return bottle.abort(int(code), "Custom message")
+
+
 ######################### User Management #####################################
 
 
@@ -40,7 +73,7 @@ def rest_login():
                 "timeout": config['auth_time_limit'],
                 "roles": auth[user]['roles']}
     except Exception as err:
-        logger.exception(str(err))
+        logger.warning("Attempted login for '{0}' failed due to {1}".format(user, err))
         bottle.abort(403, "Incorrect login")
 
 
@@ -147,8 +180,10 @@ def add_user(user, password, admin=False):
 @app.route("/user/remove", method="post")
 def rest_remove_user():
     incoming_data = bottle.request.json
-    check_auth(incoming_data['auth_token'], role="admin")
+    current_user = check_auth(incoming_data['auth_token'], role="admin")
     user = incoming_data['user']
+    if current_user == user:
+        raise bottle.abort(409, "Cannot remove yourself")
     remove_user(user)
     return {}
 

@@ -152,6 +152,5 @@ class TestPyCTFServerFunctional(TestPyCTF):
         assert resp['score'] == 1
 
 
-
 if __name__ == '__main__':
     unittest.main()

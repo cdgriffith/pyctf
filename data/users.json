@@ -5,11 +5,5 @@
             "admin"
         ],
         "password": "091e6d8885ee79f49a11b4672f67ea5fdd092a2405a79ffab4dcc47c6910a1fe"
-    },
-    "test": {
-        "roles": [
-            "user"
-        ],
-        "password": "ce24a2a78f6f232f02df6f95d8d2e292f4fe7810890c55c31076c3b63be9fd30"
     }
 }

@@ -314,10 +314,41 @@ pyctfApp.controller('adminController', ['$scope', '$http', function($scope, $htt
                  alert("User deleted");
                  document.location = "/web/admin";
              }).error(function(response){
-                alert("Invalid Credentials");
+                alert(response.error);
              });
     };
 
+}]);
+
+
+pyctfApp.controller('userController', ['$scope', '$http', function($scope, $http){
+
+    $scope.$watch('bound.page_ready', function(value) {
+        if (value == true) {
+            $(".main-area").show();
+            }
+        });
+
+    $scope.changePassword = function(){
+        if ($scope.newPass != $scope.confirmNewPass){
+            alert("Passwords do not match");
+            return false;
+        }
+
+        var data = {
+        "password": $scope.newPass,
+        "old_password": $scope.currentPass,
+        "auth_token": $scope.bound.auth
+        }
+
+        $http.post("/user/change_password", data)
+            .success(function(response){
+                alert("Password updated");
+            })
+            .error(function(response){
+                alert(response.error);
+            });
+    }
 
 
 }]);

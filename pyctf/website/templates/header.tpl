@@ -25,17 +25,26 @@
                 <li class="{{get('home', '')}}"><a href="/web/home">Home</a></li>
                 <li class="{{get('questions', '')}}"><a href="/web/questions">Questions</a></li>
                 <li class="{{get('scoreboard', '')}}"><a href="/web/scoreboard">Scoreboard</a></li>
-                <li ng-hide="bound.roles.indexOf('admin') == -1" class="{{get('admin', '')}}"><a href="/web/admin">Admin</a></li>
               </ul>
 
 
-              <div class="col-sm-1 col-md-1 pull-right">
-                    <button class="btn btn-danger" ng-click="logout()" ng-hide="! bound.logged_in || ! bound.page_ready">Logout</button>
-              </div>
-
               <div ng-hide="! bound.logged_in || ! bound.page_ready" class="col-md-2 pull-right">
-                <span class="glyphicon glyphicon-user" style="color: white">
-                Hello, {{'{{bound.user}}'}}!
+                 <div class="dropdown">
+                      <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">
+                      <span class="glyphicon glyphicon-user" style="color: white">
+                      {{'{{bound.user}}'}}
+                      <span class="caret"></span></button>
+                      <ul class="dropdown-menu">
+                        <li><a href="/web/user">Change Password</a></li>
+                        <li ng-hide="bound.roles.indexOf('admin') == -1" class="{{get('admin', '')}}" ><a href="/web/admin">Admin Controls</a></li>
+                        <li class="divider"></li>
+                        <li><a ng-click="logout()" href="#">Logout</a></li>
+                      </ul>
+                 </div>
+
+
+
+
               </div>
 
 
