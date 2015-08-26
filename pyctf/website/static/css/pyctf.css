@@ -17,6 +17,10 @@ body {
     display: none;
 }
 
+.scrollable {
+    overflow-y: auto;
+}
+
 .login-box {
     width: 100%;
     height: 220px;

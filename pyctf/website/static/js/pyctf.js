@@ -16,6 +16,7 @@ pyctfApp.controller('masterController', ['$scope', '$http', '$cookies', '$window
                     user: "",
                     roles: []};
 
+
     $scope.bound.message = function (message){
         alert(message);
     };
@@ -68,7 +69,6 @@ pyctfApp.controller('questionController', ['$scope', '$http', function($scope, $
     $scope.questionList = [];
 
     $scope.$watch('bound.page_ready', function(value) {
-        console.log($scope.bound);
         if (value == true) {
             $(".main-area").show();
             $http.get("/questions/list")
@@ -255,12 +255,26 @@ pyctfApp.controller('scoreController', ['$scope', '$http', function($scope, $htt
         }
     });
 
+        $scope.scoreboardListOrder = 'number';
+    $scope.scoreboardListOrderReverse = false;
+
+    $scope.updateSort = function(field){
+        if ($scope.scoreboardListOrder == field) {
+            $scope.scoreboardListOrderReverse = ! $scope.scoreboardListOrderReverse;
+        } else {
+            $scope.questionListOrderReverse = false;
+            $scope.scoreboardListOrder = field;
+        };
+    };
+
+
 }]);
 
 
 pyctfApp.controller('adminController', ['$scope', '$http', function($scope, $http){
 
     $scope.userNames = [];
+    $scope.questionList = [];
 
     $scope.$watch('bound.page_ready', function(value) {
         if (value == true) {
@@ -275,6 +289,18 @@ pyctfApp.controller('adminController', ['$scope', '$http', function($scope, $htt
                              $scope.userNames.push({user: value[0], admin: value[1]});
                          });
                     });
+            $http.get("/questions/list")
+                .success(function (response) {
+                    angular.forEach(response.data, function (value, key) {
+                        $scope.questionList.push({number: value[0],
+                                                  title: value[1],
+                                                  points: value[2],
+                                                  tags: value[3]});
+                    });
+                })
+                .error(function (response) {
+                    alert("Could not load questions!");
+                });
             }
 
         }
@@ -294,7 +320,6 @@ pyctfApp.controller('adminController', ['$scope', '$http', function($scope, $htt
             $http.post('/user/add', data)
              .success(function(response){
                  alert("User added");
-                 document.location = "/web/admin";
              }).error(function(response){
                 alert("Invalid Credentials");
              });
@@ -312,11 +337,30 @@ pyctfApp.controller('adminController', ['$scope', '$http', function($scope, $htt
             $http.post('/user/remove', data)
              .success(function(response){
                  alert("User deleted");
-                 document.location = "/web/admin";
              }).error(function(response){
                 alert(response.error);
              });
     };
+
+    $scope.removeQuestion = function(){
+        if(! $scope.questionToRemove){
+            alert("Must select a question!");
+            return false;
+        }
+
+        var data = {question_number: $scope.questionToRemove,
+                    auth_token: $scope.bound.auth};
+
+            $http.post('/question/delete', data)
+             .success(function(response){
+                 alert("Question deleted");
+             }).error(function(response){
+                alert(response.error);
+             });
+    };
+
+
+
 
 }]);
 
@@ -349,6 +393,4 @@ pyctfApp.controller('userController', ['$scope', '$http', function($scope, $http
                 alert(response.error);
             });
     }
-
-
 }]);

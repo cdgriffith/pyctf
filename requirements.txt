@@ -1,3 +1,4 @@
 bottle >= 0.12.6
 cherrypy >= 3.5
 requests >= 2.3
+pyopenssl

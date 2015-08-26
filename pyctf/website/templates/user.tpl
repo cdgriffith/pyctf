@@ -9,7 +9,7 @@
                 <form  ng-submit="changePassword()">
                     <div class="form-group">
                         <label class="sr-only" for="currentPass">Current Password</label>
-                        <input type="user" class="form-control" id="currentPass" ng-model="currentPass" placeholder="Current Password">
+                        <input type="text" class="form-control" id="currentPass" ng-model="currentPass" placeholder="Current Password">
                     </div>
 
                     <div class="form-group">

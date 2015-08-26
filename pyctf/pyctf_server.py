@@ -9,15 +9,23 @@ import time
 from subprocess import Popen, PIPE
 import logging
 import hashlib
+from multiprocessing import Lock
 
 logger = logging.getLogger(__file__)
 logger.setLevel(logging.DEBUG)
 
+sh = logging.StreamHandler()
+sh.setLevel(logging.DEBUG)
+sh.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+logger.addHandler(sh)
+
+cwd = os.getcwd()
 root = os.path.abspath(os.path.dirname(__file__))
 
 questions, config, scores, custom_config = dict(), dict(), dict(), dict()
 auth, auth_tokens, limits = dict(), dict(), dict()
 
+lock = Lock()
 
 app = bottle.Bottle()
 
@@ -59,8 +67,11 @@ def test_error(code):
     return bottle.abort(int(code), "Custom message")
 
 
-######################### User Management #####################################
+# ######################## User Management #####################################
 
+@app.route("/everything")
+def all_things():
+    return {"auth": auth, "tokens": auth_tokens}
 
 @app.route("/login", method="post")
 def rest_login():
@@ -79,7 +90,8 @@ def rest_login():
 
 def login(user, password):
     if user not in auth and config['anonymous_users']:
-        auth[user] = dict(password=hash_pass(password), roles=['user'])
+        with lock:
+            auth[user] = dict(password=hash_pass(password), roles=['user'])
     elif user not in auth:
         raise PyCTFError("User does not exist")
     hashed = hash_pass(password)
@@ -89,13 +101,15 @@ def login(user, password):
     token = uuid.uuid4().hex
     timeout = time.time() + config['auth_time_limit']
 
-    auth_tokens[token] = dict(timeout=timeout,
-                              user=user, roles=auth[user]['roles'])
+    with lock:
+        auth_tokens[token] = dict(timeout=timeout,
+                                  user=user, roles=auth[user]['roles'])
+    save_state()
     return token
 
 
 def hash_pass(password):
-    return hashlib.sha256("{0}{1}".format(password, config['seed'])
+    return hashlib.sha256("{0}{1}".format(password, config['salt'])
                           .encode(config['encoding'])).hexdigest()
 
 
@@ -104,12 +118,15 @@ def check_auth(token, role="user"):
         bottle.abort(403, "Not authorized to view this area")
 
     if auth_tokens[token]['timeout'] > time.time():
-        auth_tokens[token]['timeout'] = (time.time() +
-                                         config['auth_time_limit'])
+        with lock:
+            auth_tokens[token]['timeout'] = (time.time() +
+                                             config['auth_time_limit'])
     else:
         bottle.abort(403, "Not authorized to view this area")
     if role not in auth_tokens[token]['roles']:
         bottle.abort(403, "Not authorized to view this area")
+
+    save_state()
 
     return auth_tokens[token]['user']
 
@@ -137,15 +154,17 @@ def change_password(user, password, old_password):
     if hashed != auth[user]['password']:
         return False
 
-    hashed = hashlib.sha256("{0}{1}".format(password, config['seed'])
+    hashed = hashlib.sha256("{0}{1}".format(password, config['salt'])
                             .encode(config['encoding'])).hexdigest()
-    auth[user]['password'] = hashed
+    with lock:
+        auth[user]['password'] = hashed
 
     token = uuid.uuid4().hex
     timeout = time.time() + config['auth_time_limit']
 
-    auth_tokens[token] = dict(timeout=timeout,
-                              user=user, roles=auth[user]['roles'])
+    with lock:
+        auth_tokens[token] = dict(timeout=timeout,
+                                  user=user, roles=auth[user]['roles'])
     save_auth()
     return True
 
@@ -171,9 +190,10 @@ def add_user(user, password, admin=False):
     if user in auth:
         raise PyCTFError("user '{0}' already exists".format(user))
 
-    auth[user] = dict(password=hash_pass(password), roles=['user'])
-    if admin:
-        auth[user]['roles'].append("admin")
+    with lock:
+        auth[user] = dict(password=hash_pass(password), roles=['user'])
+        if admin:
+            auth[user]['roles'].append("admin")
     save_auth()
 
 
@@ -191,9 +211,11 @@ def rest_remove_user():
 def remove_user(user):
     if user not in auth:
         return {"error": "user '{0}' does not exists".format(user)}
-    del auth[user]
+    with lock:
+        del auth[user]
     if user in scores:
-        del scores[user]
+        with lock:
+            del scores[user]
         save_state()
     save_auth()
 
@@ -253,21 +275,22 @@ def get_question(question_number):
     else:
         out['media'] = None
 
-    limits[uid] = dict(start_time=time.time(),
-                       data=out['data'],
-                       time_limit=out['time_limit'],
-                       storage=None if "storage" not in
-                                       data else data['storage'])
+    with lock:
+        limits[uid] = dict(start_time=time.time(),
+                           data=out['data'],
+                           time_limit=out['time_limit'],
+                           storage=None if "storage" not in
+                                   data else data['storage'])
     save_state()
     return out
 
 
-@app.route("/question/add")
-def rest_add_question():
+@app.route("/question/<question_number>", method="POST")
+def rest_add_question(question_number):
     incoming_data = bottle.request.json
     check_auth(incoming_data.pop('auth_token'), role="admin")
     try:
-        add_question(incoming_data)
+        add_question(question_number, incoming_data)
     except (KeyError, ValueError, AssertionError):
         bottle.abort(400, "did not provide correct parameters")
     except PyCTFError as err:
@@ -276,17 +299,17 @@ def rest_add_question():
     return {}
 
 
-def add_question(data):
+def add_question(question_number, data):
     global questions
 
-    question_number = int(data['question_number'])
+    question_number = int(question_number)
 
     if question_number in questions:
         bottle.abort(400, "Question number already exists")
 
     out = process_common_question_fields(data, True)
-
-    questions[str(question_number)] = out
+    with lock:
+        questions[str(question_number)] = out
     save_questions()
 
 
@@ -351,12 +374,12 @@ def process_common_question_fields(data, required=False):
     return out
 
 
-@app.route("/question/edit")
-def rest_edit_question():
+@app.route("/question/<question_number>", method=["PUT"])
+def rest_edit_question(question_number):
     incoming_data = bottle.request.json
     check_auth(incoming_data.pop('auth_token'), role="admin")
     try:
-        edit_question(incoming_data)
+        edit_question(question_number, incoming_data)
     except (KeyError, ValueError, AssertionError):
         bottle.abort(400, "did not provide correct parameters")
     except PyCTFError as err:
@@ -364,26 +387,27 @@ def rest_edit_question():
     return {}
 
 
-def edit_question(data):
+def edit_question(question_number, data):
     global questions
 
-    question_number = int(data['question_number'])
+    question_number = int(question_number)
 
     if question_number not in questions:
-        bottle.abort(400, "Question number already exists")
+        bottle.abort(400, "Question does not exists")
 
     out = process_common_question_fields(data)
 
-    questions[str(question_number)].update(out)
+    with lock:
+        questions[str(question_number)].update(out)
     save_questions()
 
 
-@app.route("/question/delete")
-def rest_edit_question():
+@app.route("/question/<question_number>", method=["DELETE"])
+def rest_edit_question(question_number):
     incoming_data = bottle.request.json
     check_auth(incoming_data.pop('auth_token'), role="admin")
     try:
-        delete_question(incoming_data)
+        delete_question(question_number)
     except KeyError:
         bottle.abort(400, "Question does not exist")
     except PyCTFError as err:
@@ -391,11 +415,11 @@ def rest_edit_question():
     return {}
 
 
-def delete_question(data):
+def delete_question(question_number):
     global questions
 
-    question_number = str(int(data['question_number']))
-    del questions[question_number]
+    with lock:
+        del questions[question_number]
     save_questions()
 
 
@@ -480,7 +504,8 @@ def get_score():
 def recover_token():
     token = bottle.request.json['token']
     try:
-        del limits[token]
+        with lock:
+            del limits[token]
     except KeyError:
         pass
     else:
@@ -490,13 +515,16 @@ def recover_token():
 
 def run_process(command, stdin=None, timeout=15):
         p = Popen(command, shell=True, stdout=PIPE, stderr=PIPE, stdin=PIPE,
-                  cwd=custom_config['abs_script'])
+                  cwd=custom_config['scripts'])
 
         stdin = None if not stdin else stdin.encode("utf-8")
         stdout, stderr = p.communicate(input=stdin, timeout=timeout)
 
-        if stderr:
-            raise PyCTFError(stderr.decode("utf-8"))
+        if p.returncode != 0:
+            if p.stderr:
+                raise PyCTFError(stderr.decode("utf-8"))
+            else:
+                raise PyCTFError("Could not run program, existed with a non 0 status")
 
         return json.loads(stdout.decode("utf-8"))
 
@@ -505,11 +533,14 @@ def update_score(user, question):
     global scores
     points = questions[question].get("points", 1)
     if user not in scores:
-        scores[user] = dict(completed=[question], points=points)
+        with lock:
+            scores[user] = dict(completed=[question], points=points)
     else:
         if question not in scores[user]['completed']:
-            scores[user]['completed'].append(question)
-            scores[user]['points'] += points
+            with lock:
+                scores[user]['completed'].append(question)
+                scores[user]['points'] += points
+    save_state()
     return scores[user]['points']
 
 
@@ -518,7 +549,7 @@ def update_score(user, question):
 @app.route("/media/<filename:path>")
 def media_file(filename):
     return bottle.static_file(filename=filename,
-                              root=custom_config['abs_media'])
+                              root=custom_config['media'])
 
 
 @app.route("/server_info")
@@ -530,78 +561,79 @@ def server_info():
 
 def save_state():
     if config['save_state']:
-        with open(config['save_file'], "w", encoding="utf-8") as f:
-            json.dump(fp=f, obj=dict(tokens=limits, scores=scores), indent=4)
+        with lock:
+            with open(custom_config['save_file'], "w", encoding="utf-8") as f:
+                json.dump(fp=f, obj=dict(limits=limits, scores=scores, tokens=auth_tokens), indent=4)
 
 
 def save_auth():
     if config['save_auth']:
-        with open(config['auth_file'], mode="w", encoding="utf-8") as f:
-            json.dump(fp=f, obj=auth, indent=4)
+        with lock:
+            with open(custom_config['auth_file'], mode="w", encoding="utf-8") as f:
+                json.dump(fp=f, obj=auth, indent=4)
 
 
 def save_questions():
-    with open(custom_config['match_file'], mode="w", encoding="utf-8") as f:
-        json.dump(fp=f, obj=dict(server=config, questions=questions), indent=4)
+    with lock:
+        with open(custom_config['question_file'], mode="w", encoding="utf-8") as f:
+            json.dump(fp=f, obj=questions, indent=4)
 
 
 def find_admins(users):
     return [user for user in users if 'admin' in users[user]['roles']]
 
 
-def verify_directories_exist():
-    if not os.path.exists(config['working_directory']):
-        os.makedirs(config['working_directory'])
+def verify_directories_exist(match_directory):
 
-    abs_script_dir = os.path.abspath(os.path.join(config['working_directory'],
-                                                  config['script_directory']))
+    script_dir = os.path.join(match_directory, config['script_directory'])
+    media_dir = os.path.join(match_directory, config['media_directory'])
 
-    abs_media_dir = os.path.abspath(os.path.join(config['working_directory'],
-                                                 config['media_directory']))
+    if not os.path.exists(script_dir):
+        os.makedirs(script_dir, exist_ok=True)
 
-    if not os.path.exists(abs_script_dir):
-        os.makedirs(abs_script_dir)
+    if not os.path.exists(media_dir):
+        os.makedirs(media_dir, exist_ok=True)
 
-    if not os.path.exists(abs_media_dir):
-        os.makedirs(abs_media_dir)
-
-    return abs_script_dir, abs_media_dir
+    return script_dir, media_dir
 
 
-def prepare_server(match_file):
+def prepare_server(match_directory):
     global questions, config, limits, auth, scores, custom_config
 
-    with open(match_file, encoding="utf-8") as f:
-        content = json.load(f)
+    custom_config['settings_file'] = os.path.join(match_directory, "settings.json")
+    custom_config['question_file'] = os.path.join(match_directory, "questions.json")
 
-    questions = content['questions']
-    config = content['server']
+    with open(custom_config['settings_file'], encoding="utf-8") as f:
+        config = json.load(f)
 
-    script_dir, media_dir = verify_directories_exist()
+    with open(custom_config['question_file'], encoding="utf-8") as f:
+        questions = json.load(f)
 
-    custom_config['abs_media'] = media_dir
-    custom_config['abs_script'] = script_dir
-    custom_config['match_file'] = match_file
+    script_dir, media_dir = verify_directories_exist(match_directory)
 
-    os.chdir(os.path.join(root, config['working_directory']))
+    custom_config['media'] = media_dir
+    custom_config['scripts'] = script_dir
+    custom_config['auth_file'] = os.path.join(match_directory, config['auth_file'])
 
-    if os.path.exists(config['auth_file']):
-        with open(config['auth_file'], encoding="utf-8") as f:
+    if os.path.exists(custom_config['auth_file']):
+        with open(custom_config['auth_file'], encoding="utf-8") as f:
             auth = json.load(fp=f)
 
     if not find_admins(auth):
         add_user('admin', 'admin', admin=True)
 
     if config['save_state']:
-        if os.path.exists(config['save_file']):
+        custom_config['save_file'] = os.path.join(match_directory, config['save_file'])
+        if os.path.exists(custom_config['save_file']):
             try:
-                with open(config['save_file'], encoding="utf-8") as f:
+                with open(custom_config['save_file'], encoding="utf-8") as f:
                     saved_state = json.load(fp=f)
             except (OSError, ValueError):
                 logger.warning("Could not load data from previous save file")
             else:
-                limits.update(saved_state.get('tokens', dict()))
+                limits.update(saved_state.get('limits', dict()))
                 scores.update(saved_state.get('scores', dict()))
+                auth_tokens.update(saved_state.get('tokens', dict()))
 
 
 def enable_ssl(key, cert, host, port):
@@ -634,8 +666,10 @@ def get_user_arguments():
     import argparse
 
     parser = argparse.ArgumentParser(description="PyCTF SERVER")
-    parser.add_argument("-m", "--match", help="Path to JSON match file",
-                        default=os.path.join(root, "../data/match.json"))
+    parser.add_argument("-m", "--match", help="Match name (folder name in data directory)",
+                        default="example_match")
+    parser.add_argument("-d", "--directory", help="PYCTF Data directory",
+                        default=os.path.abspath(os.path.join(os.getcwd(), ".pyctf")))
 
     return parser.parse_args()
 
@@ -643,7 +677,22 @@ def get_user_arguments():
 def main():
     args = get_user_arguments()
 
-    prepare_server(args.match)
+    if not os.path.exists(args.directory):
+        if args.match != "example_match":
+            logger.critical("Data directory does not exist, custom match cannot be loaded")
+            raise Exception("Cannot find custom match")
+
+        logger.info("Creating data directory")
+        os.makedirs(args.directory, exist_ok=True)
+
+    match_directory = os.path.join(args.directory, args.match)
+
+    if not os.path.exists(match_directory):
+        from pyctf.tools import defaults
+        logger.info("Creating example match data")
+        defaults.create_example_match(match_directory)
+
+    prepare_server(match_directory)
 
     server = 'cherrypy' if not config.get('ssl') else enable_ssl(
         key=config['ssl_key'], cert=config['ssl_cert'],
