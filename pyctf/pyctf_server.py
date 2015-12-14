@@ -9,7 +9,15 @@ import time
 from subprocess import Popen, PIPE
 import logging
 import hashlib
+import sys
 from multiprocessing import Lock
+
+if sys.version_info.major == 2:
+    print("This is not Python 2 compatible yet.")
+    sys.exit(1)
+    # Python 2 is old and you should feel bad for using it and needing this.
+    from io import open
+    # This is so we can specify encoding with the JSON files easily.
 
 logger = logging.getLogger(__file__)
 logger.setLevel(logging.DEBUG)
@@ -69,9 +77,11 @@ def test_error(code):
 
 # ######################## User Management #####################################
 
-@app.route("/everything")
+@app.route("/settings")
 def all_things():
-    return {"auth": auth, "tokens": auth_tokens}
+    check_auth(bottle.request.params.get('token'), role="admin")
+    return {"settings": config}
+
 
 @app.route("/login", method="post")
 def rest_login():
@@ -114,7 +124,7 @@ def hash_pass(password):
 
 
 def check_auth(token, role="user"):
-    if token not in auth_tokens:
+    if token not in auth_tokens or not token:
         bottle.abort(403, "Not authorized to view this area")
 
     if auth_tokens[token]['timeout'] > time.time():
@@ -688,7 +698,7 @@ def main():
     match_directory = os.path.join(args.directory, args.match)
 
     if not os.path.exists(match_directory):
-        from pyctf.tools import defaults
+        from tools import defaults
         logger.info("Creating example match data")
         defaults.create_example_match(match_directory)
 
@@ -699,9 +709,9 @@ def main():
         host=config['host'], port=config['port'])
 
     if config['website']:
-        from pyctf import pyctf_website
-        pyctf_website.config = config
-        app.merge(pyctf_website.app.routes)
+        from tools import website
+        website.config = config
+        app.merge(website.app.routes)
 
     bottle.run(app, host=config['host'], port=config['port'], server=server)
 

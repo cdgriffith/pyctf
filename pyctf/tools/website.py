@@ -9,7 +9,7 @@ app = bottle.Bottle()
 
 root = os.path.abspath(os.path.dirname(__file__))
 
-bottle.TEMPLATE_PATH.append(os.path.join(root, "website", "templates"))
+bottle.TEMPLATE_PATH.append(os.path.join(root, os.path.pardir, "website", "templates"))
 
 
 config = dict()  # This will be populated when this module is imported
@@ -55,6 +55,6 @@ def new_page():
 @app.route("/static/<filename:path>")
 def static_file(filename):
     return bottle.static_file(filename=filename,
-                              root=os.path.join(root, "website", "static"))
+                              root=os.path.join(root, os.path.pardir, "website", "static"))
 
 

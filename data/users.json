@@ -1,9 +1,0 @@
-{
-    "admin": {
-        "roles": [
-            "user",
-            "admin"
-        ],
-        "password": "091e6d8885ee79f49a11b4672f67ea5fdd092a2405a79ffab4dcc47c6910a1fe"
-    }
-}

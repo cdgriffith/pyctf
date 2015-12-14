@@ -4,10 +4,7 @@
         <div class="row">
             <div class="title col-md-2 left-align">Admin Area</div>
 
-            <div class="col-md-4 btn-group pull-right" role="group" ng-init="selectedButton = 'general'">
-                <button ng-class="{'active':selectedButton === 'general'}" ng-click="selectedButton = 'general'"
-                        type="button" class="btn btn-default">General
-                </button>
+            <div class="col-md-4 btn-group pull-right" role="group" ng-init="selectedButton = 'account'">
                 <button ng-class="{'active':selectedButton === 'account'}" ng-click="selectedButton = 'account'"
                         type="button" class="btn btn-default">Accounts
                 </button>
@@ -20,6 +17,7 @@
             </div>
 
         </div>
+
 
         <div id="accounts" ng-show="selectedButton === 'account'">
             <div id="add-account" class="row sep">
@@ -80,7 +78,7 @@
                 <div class="row sep">
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label class="col-md-2 control-label" for="questionTitle">Title</label>
+                            <label class="col-md-2 control-label" for="questionTitle">Title*</label>
 
                             <div class="col-md-10">
                                 <input type="text" class="form-control" id="questionTitle" ng-model="questionTitle"
@@ -88,7 +86,7 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label class="col-md-2 control-label" for="questionBody">Question</label>
+                            <label class="col-md-2 control-label" for="questionBody">Question*</label>
 
                             <div class="col-md-10">
                                 <textarea class="form-control" id="questionBody" ng-model="questionBody"
@@ -96,7 +94,7 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label class="col-md-2 control-label" for="questionPoints">Points</label>
+                            <label class="col-md-2 control-label" for="questionPoints">Points*</label>
 
                             <div class="col-md-10">
                                 <input type="text" class="form-control" id="questionPoints" ng-model="questionPoints"
@@ -169,9 +167,18 @@
                                        ng-model="questionAnswerType" placeholder="integer">
                             </div>
                         </div>
-                        <div class="pull-right">
+                        <div class="form-group">
+                            <label class="col-md-2 control-label" for="questionNumber">Question Number</label>
+
+                            <div class="col-md-6">
+                                <input type="text" class="form-control" id="questionNumber"
+                                       ng-model="questionNumber" placeholder="integer">
+                            </div>
+                            <div class="col-md-4">
                             <button class="btn btn-success" type="submit">Add Question</button>
+                                </div>
                         </div>
+
                     </div>
 
                 </div>
