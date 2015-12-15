@@ -57,3 +57,5 @@ docs/_build/
 data/state.json
 venv/
 .pyctf/
+*.crt
+*.key

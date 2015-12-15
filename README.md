@@ -48,3 +48,31 @@ LEGAL
 MIT Licence
 
 Developed by Chris Griffith - pyctf.com - christophergriffith.net
+
+
+FAQ and Common Issues
+---------------------
+
+### Why isn't the ssl.key and ssl.crt put in the match directory by default?
+
+Feel free to put it in there, but as the server could potentially run many matches while on the
+same domain it would be silly to create a new one per match.
+
+### sslv3 alert bad certificate
+
+```
+    ssl.SSLError: [SSL: SSLV3_ALERT_BAD_CERTIFICATE] sslv3 alert bad certificate (_ssl.c:645)
+```
+
+It means the browser trying to connect has an old certificate from the site it is still trying to use.
+Try restarting the browser, if that does not fix it, refer to guides on how to remove a certificate
+from your browser.
+
+
+### tlsv1 alert unknown ca
+
+```
+    ssl.SSLError: [SSL: TLSV1_ALERT_UNKNOWN_CA] tlsv1 alert unknown ca
+```
+
+The browser has not yet accepted the self signed certificate.

@@ -19,7 +19,7 @@ if sys.version_info.major == 2:
     from io import open
     # This is so we can specify encoding with the JSON files easily.
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger("pyctf")
 logger.setLevel(logging.DEBUG)
 
 sh = logging.StreamHandler()
@@ -613,6 +613,16 @@ def prepare_server(match_directory):
     custom_config['settings_file'] = os.path.join(match_directory, "settings.json")
     custom_config['question_file'] = os.path.join(match_directory, "questions.json")
 
+    if not os.path.exists(custom_config['settings_file']):
+        logger.error("Settings file not found at {}! This could be because the first time setup failed, "
+                     "you can try deleting '.pyctf' data directory and trying the setup again.".format(
+                     custom_config['settings_file']))
+        raise Exception("Settings file not found at {}".format(custom_config['settings_file']))
+
+    if not os.path.exists(custom_config['question_file']):
+        logger.error("Question file not found at {0}!".format(custom_config['question_file']))
+        raise Exception("Settings file not found at {}".format(custom_config['question_file']))
+
     with open(custom_config['settings_file'], encoding="utf-8") as f:
         config = json.load(f)
 
@@ -705,7 +715,8 @@ def main():
     prepare_server(match_directory)
 
     server = 'cherrypy' if not config.get('ssl') else enable_ssl(
-        key=config['ssl_key'], cert=config['ssl_cert'],
+        key=config['ssl_key'],
+        cert=config['ssl_cert'],
         host=config['host'], port=config['port'])
 
     if config['website']:

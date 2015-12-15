@@ -4,9 +4,17 @@ import json
 import os
 import uuid
 
+from tools.security import create_self_signed_cert
+
 
 def create_example_match(match_directory):
     os.makedirs(match_directory, exist_ok=True)
+
+    if not os.path.exists("ssl.crt") and not os.path.exists("ssl.key"):
+        create_self_signed_cert("my_pyctf",
+                                cert_file="ssl.crt",
+                                key_file="ssl.key")
+
     with open(os.path.join(match_directory, "settings.json"), "w") as f:
         json.dump(default_settings, f)
 
@@ -25,56 +33,15 @@ def create_example_match(match_directory):
         f.write(example_script)
 
 
-def generate_ssl_cert(match_directory):
-
-    create_self_signed_cert("my_pyctf",
-                            os.path.join(match_directory, "cert.crt"),
-                            os.path.join(match_directory, "key.key"))
-
-
-def create_self_signed_cert(hostname, cert_file, key_file, country="US", state="Maine",
-                            city="Middle of Nowhere", org="Nonya", unit="Business"):
-    try:
-        from OpenSSL import crypto, SSL
-    except ImportError:
-        raise Exception("Please install PyOpenSSL")
-
-    if not os.path.exists(cert_file) or not os.path.exists(key_file):
-        # create a key pair
-        k = crypto.PKey()
-        k.generate_key(crypto.TYPE_RSA, 1024)
-        # create a self-signed cert
-        cert = crypto.X509()
-        cert.get_subject().C = country
-        cert.get_subject().ST = state
-        cert.get_subject().L = city
-        cert.get_subject().O = org
-        cert.get_subject().OU = unit
-        cert.get_subject().CN = hostname
-
-        cert.set_serial_number(1000)
-        cert.gmtime_adj_notBefore(0)
-        cert.gmtime_adj_notAfter(315360000)
-        cert.set_issuer(cert.get_subject())
-        cert.set_pubkey(k)
-        cert.sign(k, 'sha1')
-
-        with open(cert_file, "wt") as f:
-            f.write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert))
-
-        with open(key_file, "wt") as f:
-            f.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, k))
-
-
 default_settings = {
     "port": 47275,
     "host": "0.0.0.0",
     "media_directory": "media",
     "script_directory": "scripts",
     "website": True,
-    "ssl": False,
-    "ssl_cert": "ssl.pem",
-    "ssl_key": "ssl.pem",
+    "ssl": True,
+    "ssl_cert": "ssl.crt",
+    "ssl_key": "ssl.key",
     "save_state": True,
     "save_file": "state.json",
     "auth_file": "users.json",
