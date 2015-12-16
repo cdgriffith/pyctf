@@ -64,9 +64,11 @@ same domain it would be silly to create a new one per match.
     ssl.SSLError: [SSL: SSLV3_ALERT_BAD_CERTIFICATE] sslv3 alert bad certificate (_ssl.c:645)
 ```
 
-It means the browser trying to connect has an old certificate from the site it is still trying to use.
+It sometimes means the browser trying to connect has an old certificate from the site it is still trying to use.
 Try restarting the browser, if that does not fix it, refer to guides on how to remove a certificate
 from your browser.
+
+If you're connecting locally, try 'localhost' instead of '0.0.0.0' or vice versa.
 
 
 ### tlsv1 alert unknown ca

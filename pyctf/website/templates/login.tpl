@@ -1,5 +1,5 @@
 % include('header.tpl')
-<div ng-controller="loginController">
+<div ng-controller="loginController" class="login-controller">
             <div class="col-md-4"></div>
 
             <div class="col-md-4" style="min-height: 100%; min-height: 100vh; align-items: center; display: flex;">
