@@ -163,8 +163,16 @@
                             <label class="col-md-2 control-label" for="questionAnswerType">Answer&nbsp;Type</label>
 
                             <div class="col-md-10">
-                                <input type="text" class="form-control" id="questionAnswerType"
-                                       ng-model="questionAnswerType" placeholder="integer">
+                                <select class="form-control" id="questionAnswerType"
+                                       ng-model="questionAnswerType">
+                                    <option ng-selected="true" value="integer">Integer</option>
+                                    <option value="float">Float</option>
+                                    <option value="string">String</option>
+                                    <option value="list">List</option>
+                                    <option value="dictionary">Dictionary</option>
+
+                                </select>
+
                             </div>
                         </div>
                         <div class="form-group">

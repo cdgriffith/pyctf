@@ -10,7 +10,8 @@
                     <div class="col-md-3" style="cursor: pointer" ng-click="updateSort('title')"><b>Title</b><div ng-class="{'glyphicon-triangle-bottom': questionListOrder=='title' && ! questionListOrderReverse, 'glyphicon-triangle-top': questionListOrder=='title' && questionListOrderReverse}" class="glyphicon"></div></div>
                     <div class="col-md-2 pull-right" style="cursor: pointer" ng-click="updateSort('points')"><b>Points</b><div ng-class="{'glyphicon-triangle-bottom': questionListOrder=='points' && ! questionListOrderReverse, 'glyphicon-triangle-top': questionListOrder=='points' && questionListOrderReverse}" class="glyphicon"></div></div>
                 </div>
-                <div class="row list-group-item" style="cursor: pointer" ng-repeat="question in questionList | filter:questionListFilter | orderBy: questionListOrder: questionListOrderReverse" ng-click="selectQuestion(question.number)">
+                <div class="row list-group-item" style="cursor: pointer"
+                     ng-repeat="question in questionList | filter:questionListFilter | orderBy: questionListOrder: questionListOrderReverse" ng-click="selectQuestion(question.number)">
                     <div class="col-md-2 left-align" ng-bind="question.number"></div>
                     <div class="col-md-3 left-align" ng-bind="question.title"></div>
                     <div class="col-md-2 pull-right" ng-bind="question.points"></div>

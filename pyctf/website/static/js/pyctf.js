@@ -120,7 +120,7 @@ pyctfApp.controller('questionController', ['$scope', '$http', function($scope, $
         });
     };
 
-    $scope.questionListOrder = 'score';
+    $scope.questionListOrder = 'number';
     $scope.questionListOrderReverse = false;
 
     $scope.updateSort = function(field){

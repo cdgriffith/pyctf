@@ -33,7 +33,7 @@ def create_self_signed_cert(hostname, cert_file="ssl.crt", key_file="ssl.key",
     cert.gmtime_adj_notAfter(315360000)
     cert.set_issuer(cert.get_subject())
     cert.set_pubkey(k)
-    cert.sign(k, 'sha1')
+    cert.sign(k, 'sha256')
 
     with open(cert_file, "wb") as f:
         f.write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert))

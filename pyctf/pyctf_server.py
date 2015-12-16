@@ -361,7 +361,7 @@ def process_common_question_fields(data, required=False):
     # Optional fields
 
     if "answer_type" in data:
-        assert [x for x in ("boolean", "integer", "string", "list",
+        assert [x for x in ("boolean", "integer", "string", "list", "float"
                             "dictionary") if x == data['answer_type'].lower()]
         out['answer_type'] = data['answer_type'].lower()
     if "media" in data:
