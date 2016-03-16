@@ -12,10 +12,12 @@ import hashlib
 import sys
 from multiprocessing import Lock
 
+from tools import website
+
 if sys.version_info.major == 2:
     print("This is not Python 2 compatible yet.")
     sys.exit(1)
-    # Python 2 is old and you should feel bad for using it and needing this.
+    # Python 2 is antiquated and you should feel bad for using it.
     from io import open
     # This is so we can specify encoding with the JSON files easily.
 
@@ -719,10 +721,8 @@ def main():
         cert=config['ssl_cert'],
         host=config['host'], port=config['port'])
 
-    if config['website']:
-        from tools import website
-        website.config = config
-        app.merge(website.app.routes)
+    website.config = config
+    app.merge(website.app.routes)
 
     bottle.run(app, host=config['host'], port=config['port'], server=server)
 
